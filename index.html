@@ -109,25 +109,24 @@
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
 
-    let playlist = [];
-    let titles = [];
-    let videoDurations = [];
-    let streamTypes = [];
-    let totalDuration = 0;
-    
-    let hls = null;
-    let currentIndex = -1;
-    let isMuted = true;
-    let isInitialized = false;
+    let currentUrl = '';
+    let currentType = '';
+    let currentTimeOffset = 0;
 
-    muteToggle.textContent = '🔈';
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
+
+      // 1. If it's a standard video element, update its mute state directly
       const activeVideo = container.querySelector('video');
       if (activeVideo) {
         activeVideo.muted = isMuted;
         if (!activeVideo.paused) activeVideo.play().catch(() => {});
+      }
+
+      // 2. If it's an iframe (like YouTube), re-render it with the new mute parameter
+      if (currentType === 'iframe' && currentUrl) {
+        loadMedia(currentUrl, currentType, currentTimeOffset);
       }
     });
 
@@ -171,10 +170,14 @@
       }
       return { index: 0, time: 0 };
     }
-
-    function loadMedia(url, type, startTime) {
+   function loadMedia(url, type, startTime) {
       if (!url) return;
       
+      // Save current states for the mute toggle reference
+      currentUrl = url;
+      currentType = type;
+      currentTimeOffset = startTime;
+
       if (hls) {
         hls.destroy();
         hls = null;
@@ -184,19 +187,70 @@
 
       if (type === 'iframe') {
         const iframe = document.createElement('iframe');
-        iframe.src = url;
+        
+        // If it's a YouTube URL, dynamically adjust the 'mute' parameter based on user toggle
+        let finalUrl = url;
+        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
+          // Replace or append mute parameter (mute=0 for sound on, mute=1 for sound off)
+          const muteVal = isMuted ? '1' : '0';
+          if (finalUrl.includes('mute=')) {
+            finalUrl = finalUrl.replace(/mute=[01]/, `mute=${muteVal}`);
+          } else {
+            finalUrl += (finalUrl.includes('?') ? '&' : '?') + `mute=${muteVal}`;
+          }
+          // Ensure autoplay is active
+          if (!finalUrl.includes('autoplay=')) {
+            finalUrl += '&autoplay=1';
+          }
+        }
+
+        iframe.src = finalUrl;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
-        
-        // Add explicit permissions policy allow attributes to silence sensor/accelerometer warnings
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-        
-        // Secure sandbox: allows player controls, scripts, and media, but blocks top-level redirects/popups
         iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
         
         container.appendChild(iframe);
       } else {
+        const video = document.createElement('video');
+        video.id = 'videoPlayer';
+        video.autoplay = true;
+        video.muted = isMuted;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.pointerEvents = 'none';
+        video.style.userSelect = 'none';
+
+        container.appendChild(video);
+
+        if (url.includes('.m3u8')) {
+          if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            }, { once: true });
+          }
+        } else {
+          video.src = url;
+          video.currentTime = startTime;
+          video.play().catch(() => {});
+        }
+      }
+   }
+    
+      else {
         const video = document.createElement('video');
         video.id = 'videoPlayer';
         video.autoplay = true;
