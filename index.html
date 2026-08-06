@@ -101,39 +101,44 @@
   <footer>
     <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
   </footer>
-
-  <!-- HLS.js -->
+<!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const container = document.getElementById('videoContainer');
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
 
+    let playlist = [];
+    let titles = [];
+    let videoDurations = [];
+    let streamTypes = [];
+    let totalDuration = 0;
+    
+    let hls = null;
+    let currentIndex = -1;
+    let isMuted = true;
     let currentUrl = '';
     let currentType = '';
     let currentTimeOffset = 0;
 
+    muteToggle.textContent = '🔈';
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
-
-      // 1. If it's a standard video element, update its mute state directly
+      
       const activeVideo = container.querySelector('video');
       if (activeVideo) {
         activeVideo.muted = isMuted;
         if (!activeVideo.paused) activeVideo.play().catch(() => {});
       }
 
-      // 2. If it's an iframe (like YouTube), re-render it with the new mute parameter
       if (currentType === 'iframe' && currentUrl) {
         loadMedia(currentUrl, currentType, currentTimeOffset);
       }
     });
 
-    // Fetch schedule data (can be called repeatedly for real-time updates)
     async function fetchSchedule(isInitial = false) {
       try {
-        // Append a timestamp query string (?t=...) to bypass browser caching of test.json
         const response = await fetch(`test.json?t=${Date.now()}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
@@ -148,13 +153,10 @@
 
         if (isInitial) {
           syncPlayback();
-          setInterval(syncPlayback, 1000); // 1-second sync tick for playback positions
+          setInterval(syncPlayback, 1000);
         }
       } catch (error) {
         console.error('Failed to fetch test.json:', error);
-        if (!isInitialized) {
-          bottomScrollText.textContent = 'Error: Could not load test.json schedule configuration.';
-        }
       }
     }
 
@@ -170,10 +172,10 @@
       }
       return { index: 0, time: 0 };
     }
-   function loadMedia(url, type, startTime) {
+
+    function loadMedia(url, type, startTime) {
       if (!url) return;
       
-      // Save current states for the mute toggle reference
       currentUrl = url;
       currentType = type;
       currentTimeOffset = startTime;
@@ -188,17 +190,14 @@
       if (type === 'iframe') {
         const iframe = document.createElement('iframe');
         
-        // If it's a YouTube URL, dynamically adjust the 'mute' parameter based on user toggle
         let finalUrl = url;
         if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
-          // Replace or append mute parameter (mute=0 for sound on, mute=1 for sound off)
           const muteVal = isMuted ? '1' : '0';
           if (finalUrl.includes('mute=')) {
             finalUrl = finalUrl.replace(/mute=[01]/, `mute=${muteVal}`);
           } else {
             finalUrl += (finalUrl.includes('?') ? '&' : '?') + `mute=${muteVal}`;
           }
-          // Ensure autoplay is active
           if (!finalUrl.includes('autoplay=')) {
             finalUrl += '&autoplay=1';
           }
@@ -208,49 +207,15 @@
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
-        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-        iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
+        
+        // Comprehensive permissions policy allowing sensory, autoplay, and presentation frameworks
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+        
+        // Relax sandbox slightly to permit proper iframe interaction workflows required by embedded media scripts
+        iframe.sandbox = "allow-scripts allow-same-origin allow-presentation allow-forms";
         
         container.appendChild(iframe);
       } else {
-        const video = document.createElement('video');
-        video.id = 'videoPlayer';
-        video.autoplay = true;
-        video.muted = isMuted;
-        video.playsInline = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'cover';
-        video.style.pointerEvents = 'none';
-        video.style.userSelect = 'none';
-
-        container.appendChild(video);
-
-        if (url.includes('.m3u8')) {
-          if (Hls.isSupported()) {
-            hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              video.currentTime = startTime;
-              video.play().catch(() => {});
-            });
-          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
-            video.addEventListener('loadedmetadata', () => {
-              video.currentTime = startTime;
-              video.play().catch(() => {});
-            }, { once: true });
-          }
-        } else {
-          video.src = url;
-          video.currentTime = startTime;
-          video.play().catch(() => {});
-        }
-      }
-   }
-    
-      else {
         const video = document.createElement('video');
         video.id = 'videoPlayer';
         video.autoplay = true;
@@ -311,12 +276,8 @@
       }
     }
 
-    // Start player initially
     async function initPlayer() {
       await fetchSchedule(true);
-      isInitialized = true;
-
-      // Periodically re-fetch test.json in the background every 10 seconds for real-time updates
       setInterval(() => {
         fetchSchedule(false);
       }, 10000);
