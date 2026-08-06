@@ -1,26 +1,51 @@
 {
   "network": "MSTV Network",
-  "playlist": [
+  "broadcast_simulator": [
     {
       "id": 1,
       "title": "W3Schools MP4 Sample",
       "type": "video",
       "duration_seconds": 60,
-      "stream_url":"https://ia802800.us.archive.org/33/items/cooking_202602/part_000.ia.mp4?cnt=0"
+      "stream_url": "https://ia802800.us.archive.org/33/items/cooking_202602/part_000.ia.mp4?cnt=0"
     },
     {
       "id": 2,
       "title": "Embedded Stream (Iframe Sandbox Test)",
       "type": "iframe",
       "duration_seconds": 120,
-      "stream_url": "https://www.youtube.com/embed/J7ac_o8a2-4?si=yOCUuR8QY1qIM8HBautoplay=1&mute=0&controls=0"
+      "stream_url": "https://www.youtube.com/embed/J7ac_o8a2-4?si=yOCUuR8QY1qIM8HB&autoplay=1&mute=0&controls=0"
+    }
+  ],
+  "youtube_live": [
+    {
+      "name": "YouTube 24/7 News Feed",
+      "url": "https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1",
+      "type": "iframe",
+      "category": "YouTube Live",
+      "logo": "https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp"
     },
     {
-      "id": 3,
-      "title": "Sintel HLS Stream",
-      "type": "video",
-      "duration_seconds": 60,
-      "stream_url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+      "name": "Lofi Beats Live Stream",
+      "url": "https://www.youtube.com/embed/5qap5aO4i9A?autoplay=1",
+      "type": "iframe",
+      "category": "YouTube Live",
+      "logo": "https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/znews.webp"
+    }
+  ],
+  "live_tv_channels": [
+    {
+      "name": "India Tv",
+      "url": "https://pl-indiatvnews.akamaized.net/out/v1/db79179b608641ceaa5a4d0dd0dca8da/index.m3u8",
+      "type": "hls",
+      "category": "Live Tv",
+      "logo": "https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp"
+    },
+    {
+      "name": "Zee News Hd",
+      "url": "https://dt3lrqnyx3dks.cloudfront.net/index_3.m3u8",
+      "type": "hls",
+      "category": "Live Tv",
+      "logo": "https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/znews.webp"
     }
   ]
 }
