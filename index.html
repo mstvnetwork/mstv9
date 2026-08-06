@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="description" content="MSTV Network offers a variety of live TV channels, YouTube live streams, and 24/7 broadcast simulators. Watch online for free.">
+    <meta name="description" content="MSTV Network offers live TV channels, YouTube live feeds, and a 24/7 broadcast simulator. Watch online for free.">
     <meta name="robots" content="index, follow">
     <title>MSTV Network - Ultimate Media Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -175,7 +175,7 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.5);
       }
 
-      /* 4. 3 Category Buttons & Collapsible Drawers */
+      /* 3 Category Buttons & Collapsible Drawers */
       .categories-nav-wrapper {
         background-color: #141414;
         padding: 10px 20px;
@@ -270,7 +270,7 @@
         width: 100%;
       }
 
-      /* 5. Professional Style Footer Section */
+      /* Professional Style Footer Section */
       footer {
         background-color: #0b0b0b;
         color: #aaa;
@@ -340,31 +340,21 @@
     <p>Loading schedule...</p>
   </div>
 
-  <!-- 4. Category Buttons & Collapsible Drawers Section -->
+  <!-- 3 Category Buttons & Collapsible Drawers Section -->
   <div class="categories-nav-wrapper">
     <div class="category-buttons-container">
-      <button class="cat-btn" data-target="apnaDrawer"><i class="fa-solid fa-tv"></i> Apna Tv Channel</button>
-      <button class="cat-btn" data-target="youtubeDrawer"><i class="fa-brands fa-youtube"></i> You Tube Live</button>
-      <button class="cat-btn" data-target="liveTvDrawer"><i class="fa-solid signal"></i> Live Tv</button>
+      <button class="cat-btn" id="apnaDirectBtn"><i class="fa-solid fa-tv"></i> Apna Tv Channel</button>
+      <button class="cat-btn" id="youtubeDirectBtn"><i class="fa-brands fa-youtube"></i> You Tube Live</button>
+      <button class="cat-btn" data-target="liveTvDrawer"><i class="fa-solid fa-signal"></i> Live Tv</button>
     </div>
 
-    <!-- Apna Tv Channel Drawer -->
-    <div id="apnaDrawer" class="collapsible-drawer">
-      <div class="channels-scroll-row" id="apnaChannelsList"></div>
-    </div>
-
-    <!-- YouTube Live Drawer -->
-    <div id="youtubeDrawer" class="collapsible-drawer">
-      <div class="channels-scroll-row" id="youtubeChannelsList"></div>
-    </div>
-
-    <!-- Live Tv Drawer -->
+    <!-- Live Tv Drawer (Only Live Tv has multiple subchannels with scroll list) -->
     <div id="liveTvDrawer" class="collapsible-drawer">
       <div class="channels-scroll-row" id="liveTvChannelsList"></div>
     </div>
   </div>
 
-  <!-- 5. Professional Style Footer Section -->
+  <!-- Professional Style Footer Section -->
   <footer>
     <div class="footer-left">
       © 2026 <span>MSTV INDIA</span>. All rights reserved.
@@ -390,7 +380,7 @@
     const $iframeEl = document.getElementById('iframeElement');
     const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
 
-    // Data structures for 3-in-1 JSON
+    // Data structures for JSON
     let broadcastSimulator = [];
     let youtubeLiveList = [];
     let liveTvList = [];
@@ -408,7 +398,7 @@
     let currentUrl = '';
     let currentType = '';
     let currentTimeOffset = 0;
-    let manualOverrideActive = false; // Prevents broadcast scheduler from interrupting manual selection
+    let manualOverrideActive = false; // When true, broadcast simulator scheduler pauses
 
     muteToggle.textContent = '🔈';
     muteToggle.addEventListener('click', () => {
@@ -436,19 +426,17 @@
         
         const data = await response.json();
         
-        // Populate sections
         broadcastSimulator = data.broadcast_simulator || [];
         youtubeLiveList = data.youtube_live || [];
         liveTvList = data.live_tv_channels || [];
         
-        // Combine all for search & UI rendering
         allMediaItems = [
-          ...broadcastSimulator.map(item => ({ ...item, category: 'Apna Tv Channel' })),
-          ...youtubeLiveList,
-          ...liveTvList
+          ...broadcastSimulator.map(item => ({ ...item, category: 'Apna Tv Channel', isSimulator: true })),
+          ...youtubeLiveList.map(item => ({ ...item, category: 'You Tube Live' })),
+          ...liveTvList.map(item => ({ ...item, category: 'Live Tv' }))
         ];
 
-        renderCategoryDrawers();
+        renderLiveTvDrawer();
 
         if (broadcastSimulator.length > 0) {
           playlist = broadcastSimulator.map(item => item.stream_url);
@@ -467,25 +455,19 @@
       }
     }
 
-    // Render channels dynamically inside collapsible drawer rows
-    function renderCategoryDrawers() {
-      populateRow('apnaChannelsList', broadcastSimulator, 'Apna Tv Channel');
-      populateRow('youtubeChannelsList', youtubeLiveList, 'You Tube Live');
-      populateRow('liveTvChannelsList', liveTvList, 'Live Tv');
-    }
-
-    function populateRow(containerId, list, categoryName) {
-      const rowContainer = document.getElementById(containerId);
+    // Render Live Tv channels list inside drawer
+    function renderLiveTvDrawer() {
+      const rowContainer = document.getElementById('liveTvChannelsList');
       rowContainer.innerHTML = '';
-      if (!list || list.length === 0) {
+      if (!liveTvList || liveTvList.length === 0) {
         rowContainer.innerHTML = '<span style="font-size:0.8rem; color:#777; padding:10px;">No channels available</span>';
         return;
       }
-      list.forEach(item => {
+      liveTvList.forEach(item => {
         const card = document.createElement('div');
         card.className = 'channel-card';
         const logoUrl = item.logo || 'https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp';
-        const titleName = item.name || item.title || 'Channel';
+        const titleName = item.name || 'Channel';
         
         card.innerHTML = `
           <img src="${logoUrl}" alt="${titleName}" onerror="this.src='https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp'">
@@ -494,12 +476,11 @@
         
         card.addEventListener('click', () => {
           manualOverrideActive = true;
-          const targetUrl = item.stream_url || item.url;
+          const targetUrl = item.url;
           const targetType = item.type || 'hls';
           
-          // Instant Playback & Auto Collapse Drawer
           loadMedia(targetUrl, targetType, 0, item);
-          updateBottomScrollTextManual(titleName, categoryName);
+          updateBottomScrollTextManual(titleName, 'Live Tv');
           collapseAllDrawers();
         });
         
@@ -507,38 +488,49 @@
       });
     }
 
-    // Category Collapsible Button Logic
-    const catButtons = document.querySelectorAll('.cat-btn');
-    const drawers = document.querySelectorAll('.collapsible-drawer');
+    // Direct Channel Buttons Logic ("Apna Tv Channel" and "You Tube Live" play directly without subcategory dropdowns)
+    document.getElementById('apnaDirectBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapseAllDrawers();
+      manualOverrideActive = false; // Resume or start broadcast simulator mode
+      syncPlayback();
+    });
 
-    catButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetDrawerId = btn.getAttribute('data-target');
-        const targetDrawer = document.getElementById(targetDrawerId);
-        const isOpen = targetDrawer.classList.contains('open');
+    document.getElementById('youtubeDirectBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapseAllDrawers();
+      if (youtubeLiveList.length > 0) {
+        manualOverrideActive = true;
+        const ytItem = youtubeLiveList[0];
+        loadMedia(ytItem.url, ytItem.type || 'iframe', 0, ytItem);
+        updateBottomScrollTextManual(ytItem.name, 'You Tube Live');
+      }
+    });
 
-        collapseAllDrawers();
+    // Toggle for Live Tv Drawer
+    const liveTvBtn = document.querySelector('[data-target="liveTvDrawer"]');
+    const liveTvDrawer = document.getElementById('liveTvDrawer');
 
-        if (!isOpen) {
-          targetDrawer.classList.add('open');
-          btn.classList.add('active');
-        }
-      });
+    liveTvBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = liveTvDrawer.classList.contains('open');
+      collapseAllDrawers();
+      if (!isOpen) {
+        liveTvDrawer.classList.add('open');
+        liveTvBtn.classList.add('active');
+      }
     });
 
     function collapseAllDrawers() {
-      drawers.forEach(d => d.classList.remove('open'));
-      catButtons.forEach(b => b.classList.remove('active'));
+      liveTvDrawer.classList.remove('open');
+      liveTvBtn.classList.remove('active');
     }
 
     document.addEventListener('click', () => {
       collapseAllDrawers();
     });
 
-    drawers.forEach(d => {
-      d.addEventListener('click', (e) => e.stopPropagation());
-    });
+    liveTvDrawer.addEventListener('click', (e) => e.stopPropagation());
 
     // Search Bar Functionality
     const searchInput = document.getElementById('searchInput');
@@ -592,6 +584,7 @@
       }
     });
 
+    // Broadcast Simulator Duration Math Logic
     function getPlaybackPosition() {
       if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
@@ -647,7 +640,7 @@
     function showLoader(show) {}
     function showError(message) { console.error(message); }
 
-    // Seamless Multi-Format Media Engine (HLS, DASH, MP4, YouTube Iframe)
+    // Seamless Multi-Format Media Engine
     async function loadMedia(url, type, startTime, ch = {}) {
       if (!url) return;
       
@@ -674,7 +667,6 @@
           }
         }
 
-        // Clear active HLS stream to prevent background audio leaks
         if (hls) { hls.destroy(); hls = null; }
         $videoEl.pause();
         $videoEl.src = '';
@@ -690,13 +682,13 @@
 
       } else if (isDashStream(type, streamUrl)) {
         $iframeEl.style.display = 'none';
-        $iframeEl.src = ''; // Terminate iframe background streams
+        $iframeEl.src = ''; 
         $videoEl.style.display = 'block';
         
         await playDASH(streamUrl, startTime);
       } else {
         $iframeEl.style.display = 'none';
-        $iframeEl.src = ''; // Terminate iframe background streams
+        $iframeEl.src = ''; 
         $videoEl.style.display = 'block';
         
         await playHLS(streamUrl, startTime);
@@ -710,7 +702,7 @@
     }
 
     function updateBottomScrollTextManual(title, category) {
-      bottomScrollText.textContent = `Custom Stream Active: ${title} [Category: ${category}] — Enjoy Live Broadcast!`;
+      bottomScrollText.textContent = `Channel Active: ${title} [Category: ${category}] — Enjoy Live Broadcast!`;
     }
 
     function syncPlayback() {
