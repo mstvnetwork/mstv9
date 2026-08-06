@@ -90,8 +90,8 @@
 
   <div class="video-wrapper">
     <div id="videoContainer">
-      <!-- Both elements pre-defined for the engine to toggle -->
-      <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:none;"></video>
+      <!-- Permanent elements for engine toggling -->
+      <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; display:none;"></video>
       <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
     </div>
     <span id="muteToggle">🔈</span>
@@ -105,12 +105,18 @@
   <footer>
     <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
   </footer>
-<!-- HLS.js -->
+
+  <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const container = document.getElementById('videoContainer');
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
+
+    // Engine UI Nodes
+    const $videoEl = document.getElementById('videoElement');
+    const $iframeEl = document.getElementById('iframeElement');
+    const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
 
     let playlist = [];
     let titles = [];
@@ -130,14 +136,18 @@
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
       
-      const activeVideo = container.querySelector('video');
-      if (activeVideo) {
-        activeVideo.muted = isMuted;
-        if (!activeVideo.paused) activeVideo.play().catch(() => {});
-      }
+      // Handle native video / HLS stream
+      $videoEl.muted = isMuted;
+      if (!$videoEl.paused) $videoEl.play().catch(() => {});
 
+      // Handle iframe player (Instant YouTube postMessage unmuting)
       if (currentType === 'iframe' && currentUrl) {
-        loadMedia(currentUrl, currentType, currentTimeOffset);
+        if (currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('youtube-nocookie.com')) {
+          const command = isMuted ? '{"event":"command","func":"mute","args":""}' : '{"event":"command","func":"unMute","args":""}';
+          $iframeEl.contentWindow.postMessage(command, '*');
+        } else {
+          loadMedia(currentUrl, currentType, currentTimeOffset);
+        }
       }
     });
 
@@ -177,110 +187,106 @@
       return { index: 0, time: 0 };
     }
 
-    // Define constants for the engine
-  const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
-  const $videoEl = document.getElementById('videoElement');
-  const $iframeEl = document.getElementById('iframeElement');
-
-  function showLoader(show) {
-    // Optional loader hook if needed
-  }
-
-  function showError(message) {
-    console.error(message);
-  }
-
-  function isDashStream(type, url) {
-    return type === 'dash' || url.includes('.mpd');
-  }
-
-  async function playDASH(url, startTime) {
-    // Placeholder or integrated DASH player logic (e.g. dash.js)
-    $videoEl.src = url;
-    $videoEl.currentTime = startTime;
-    $videoEl.play().catch(() => {});
-  }
-
-  async function playHLS(url, startTime) {
-    if (hls) {
-      hls.destroy();
-      hls = null;
+    function isDashStream(type, url) {
+      return type === 'dash' || url.includes('.mpd');
     }
 
-    if (url.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia($videoEl);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          $videoEl.currentTime = startTime;
-          $videoEl.play().catch(() => {});
-        });
-      } else if ($videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-        $videoEl.src = url;
-        $videoEl.addEventListener('loadedmetadata', () => {
-          $videoEl.currentTime = startTime;
-          $videoEl.play().catch(() => {});
-        }, { once: true });
-      }
-    } else {
+    async function playDASH(url, startTime) {
       $videoEl.src = url;
       $videoEl.currentTime = startTime;
       $videoEl.play().catch(() => {});
     }
-  }
 
-  // Refactored loadMedia using your engine pattern
-  async function loadMedia(url, type, startTime, ch = {}) {
-    if (!url) return;
-    
-    currentUrl = url;
-    currentType = type;
-    currentTimeOffset = startTime;
-
-    // Keep track of mute property
-    $videoEl.muted = isMuted;
-
-    let streamUrl = url;
-    if (type === 'iframe') {
-      if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
-        const muteVal = isMuted ? '1' : '0';
-        if (streamUrl.includes('mute=')) {
-          streamUrl = streamUrl.replace(/mute=[01]/, `mute=${muteVal}`);
-        } else {
-          streamUrl += (streamUrl.includes('?') ? '&' : '?') + `mute=${muteVal}`;
-        }
-        if (!streamUrl.includes('autoplay=')) {
-          streamUrl += '&autoplay=1';
-        }
+    async function playHLS(url, startTime) {
+      if (hls) {
+        hls.destroy();
+        hls = null;
       }
 
-      // --- ENGINE CODE APPLIED HERE ---
-      $videoEl.style.display = 'none';
-      $iframeEl.style.display = 'block';
-      if (ch.sandboxed !== false) $iframeEl.setAttribute('sandbox', SANDBOX_VALUE);
-      else $iframeEl.removeAttribute('sandbox');
-      
-      $iframeEl.src = streamUrl;
-      $iframeEl.onload = () => showLoader(false);
-      $iframeEl.onerror = () => showError('iFrame error');
-
-    } else if (isDashStream(type, streamUrl)) {
-      // --- ENGINE CODE APPLIED HERE ---
-      $iframeEl.style.display = 'none';
-      $videoEl.style.display = 'block';
-      // Clear iframe source to stop background audio/processes
-      $iframeEl.src = ''; 
-      await playDASH(streamUrl, startTime);
-    } else {
-      // --- ENGINE CODE APPLIED HERE ---
-      $iframeEl.style.display = 'none';
-      $videoEl.style.display = 'block';
-      // Clear iframe source to stop background audio/processes
-      $iframeEl.src = '';
-      await playHLS(streamUrl, startTime);
+      if (url.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          hls = new Hls();
+          hls.loadSource(url);
+          hls.attachMedia($videoEl);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            $videoEl.currentTime = startTime;
+            $videoEl.play().catch(() => {});
+          });
+        } else if ($videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+          $videoEl.src = url;
+          $videoEl.addEventListener('loadedmetadata', () => {
+            $videoEl.currentTime = startTime;
+            $videoEl.play().catch(() => {});
+          }, { once: true });
+        }
+      } else {
+        $videoEl.src = url;
+        $videoEl.currentTime = startTime;
+        $videoEl.play().catch(() => {});
+      }
     }
-  }
+
+    function showLoader(show) {
+      // Optional UI loader handler
+    }
+
+    function showError(message) {
+      console.error(message);
+    }
+
+    async function loadMedia(url, type, startTime, ch = {}) {
+      if (!url) return;
+      
+      currentUrl = url;
+      currentType = type;
+      currentTimeOffset = startTime;
+      $videoEl.muted = isMuted;
+
+      let streamUrl = url;
+
+      if (type === 'iframe') {
+        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
+          if (!streamUrl.includes('enablejsapi=1')) {
+            streamUrl += (streamUrl.includes('?') ? '&' : '?') + 'enablejsapi=1';
+          }
+          const muteVal = isMuted ? '1' : '0';
+          if (streamUrl.includes('mute=')) {
+            streamUrl = streamUrl.replace(/mute=[01]/, `mute=${muteVal}`);
+          } else {
+            streamUrl += `&mute=${muteVal}`;
+          }
+          if (!streamUrl.includes('autoplay=')) {
+            streamUrl += '&autoplay=1';
+          }
+        }
+
+        // Engine Code Block for Iframe
+        $videoEl.style.display = 'none';
+        $iframeEl.style.display = 'block';
+        if (ch.sandboxed !== false) $iframeEl.setAttribute('sandbox', SANDBOX_VALUE);
+        else $iframeEl.removeAttribute('sandbox');
+        
+        $iframeEl.src = streamUrl;
+        $iframeEl.onload = () => showLoader(false);
+        $iframeEl.onerror = () => showError('iFrame error');
+
+      } else if (isDashStream(type, streamUrl)) {
+        // Engine Code Block for DASH
+        $iframeEl.style.display = 'none';
+        $iframeEl.style.display = ''; // Clear iframe src to stop background audio leak
+        $iframeEl.src = '';
+        $videoEl.style.display = 'block';
+        
+        await playDASH(streamUrl, startTime);
+      } else {
+        // Engine Code Block for HLS / Default
+        $iframeEl.style.display = 'none';
+        $iframeEl.src = ''; // Clear iframe src to stop background audio leak
+        $videoEl.style.display = 'block';
+        
+        await playHLS(streamUrl, startTime);
+      }
+    }
 
     function updateBottomScrollText(index) {
       const nowPlaying = titles[index] || "Unknown";
@@ -299,9 +305,8 @@
         return;
       }
 
-      const activeVideo = container.querySelector('video');
-      if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
-        activeVideo.currentTime = time;
+      if ($videoEl.style.display === 'block' && Math.abs($videoEl.currentTime - time) > 3) {
+        $videoEl.currentTime = time;
       }
     }
 
