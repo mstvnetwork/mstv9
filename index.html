@@ -35,7 +35,7 @@
     }
     </script>
 
-    <!-- ✅ GoatCounter script -->
+    <!-- GoatCounter script -->
     <script data-goatcounter="https://mstv.goatcounter.com/count"
             async src="https://gc.zgo.at/count.js"></script>
 
@@ -104,18 +104,6 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-    }
-
-    #videoPlayer {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-      user-select: none;
-    }
-
-    #videoPlayer::-webkit-media-controls {
-      display: none !important;
     }
 
     #muteToggle {
@@ -199,16 +187,15 @@
     <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
   </div>
 
-  <!-- Video Player Section -->
+  <!-- Video / Embed Wrapper Section -->
   <div class="video-wrapper">
     <div id="videoContainer">
-      <video id="videoPlayer" autoplay muted playsinline></video>
-      <span id="muteToggle">🔈</span>
-      <div id="liveStamp">LIVE</div>
+      <!-- Dynamic media target inserted here -->
     </div>
+    <span id="muteToggle">🔈</span>
+    <div id="liveStamp">LIVE</div>
   </div>
     
-
   <!-- Bottom Scrolling Text (dynamic) -->
   <div class="scrolling-text bottom-scrolling-text">
     <p>Loading schedule...</p>
@@ -253,39 +240,53 @@
   <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
 </footer>
 
-
   <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    const video = document.getElementById('videoPlayer');
+    const container = document.getElementById('videoContainer');
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
 
-    video.muted = true;
-    muteToggle.textContent = '🔈';
-
-    muteToggle.addEventListener('click', () => {
-      video.muted = !video.muted;
-      muteToggle.textContent = video.muted ? '🔈' : '🔊';
-      if (!video.paused) video.play().catch(() => {});
-    });
-
-    // Stream URLs
-    const playlist = [
-      "https://d65f47.cfglobalcdn.com/silverlight/secip/113295/133612/TEolpbNaeIcphyayOH5dLA/MTAxLjExOS42Ny4xNDY=/1755451525/hls-vod-s0013/flv/api/files/videos/2025/07/21/1753112016mujgj.mp4.m3u8"
-      
-    ];
-
-    // Corresponding titles
-    const titles = [
-      "Saajan",
-      "Sikandar"
-    ];
-
-    const videoDurations = [120, 120]; // seconds
-    const totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+    let playlist = [];
+    let titles = [];
+    let videoDurations = [];
+    let streamTypes = [];
+    let totalDuration = 0;
+    
     let hls = null;
     let currentIndex = -1;
+    let isMuted = true;
+
+    muteToggle.textContent = '🔈';
+    muteToggle.addEventListener('click', () => {
+      isMuted = !isMuted;
+      muteToggle.textContent = isMuted ? '🔈' : '🔊';
+      
+      const activeVideo = container.querySelector('video');
+      if (activeVideo) {
+        activeVideo.muted = isMuted;
+        if (!activeVideo.paused) activeVideo.play().catch(() => {});
+      }
+    });
+
+    async function initPlayer() {
+      try {
+        const response = await fetch('test.json');
+        const data = await response.json();
+        
+        playlist = data.playlist.map(item => item.stream_url);
+        titles = data.playlist.map(item => item.title);
+        videoDurations = data.playlist.map(item => item.duration_seconds);
+        streamTypes = data.playlist.map(item => item.type || 'video');
+        totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+
+        syncPlayback();
+        setInterval(syncPlayback, 1000);
+      } catch (error) {
+        console.error('Failed to load test.json:', error);
+        bottomScrollText.textContent = 'Error loading schedule.';
+      }
+    }
 
     function getPlaybackPosition() {
       const now = Math.floor(Date.now() / 1000) % totalDuration;
@@ -299,17 +300,60 @@
       return { index: 0, time: 0 };
     }
 
-    function loadStream(url, startTime) {
+    function loadMedia(url, type, startTime) {
       if (hls) {
         hls.destroy();
+        hls = null;
       }
-      hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.currentTime = startTime;
-        video.play().catch(() => {});
-      });
+
+      container.innerHTML = '';
+
+      if (type === 'iframe') {
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.pointerEvents = 'none';
+        iframe.sandbox = "allow-scripts allow-same-origin";
+        
+        container.appendChild(iframe);
+      } else {
+        const video = document.createElement('video');
+        video.id = 'videoPlayer';
+        video.autoplay = true;
+        video.muted = isMuted;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.pointerEvents = 'none';
+        video.style.userSelect = 'none';
+
+        container.appendChild(video);
+
+        if (url.includes('.m3u8')) {
+          if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            }, { once: true });
+          }
+        } else {
+          video.src = url;
+          video.currentTime = startTime;
+          video.play().catch(() => {});
+        }
+      }
     }
 
     function updateBottomScrollText(index) {
@@ -319,31 +363,30 @@
     }
 
     function syncPlayback() {
+      if (totalDuration === 0) return;
       const { index, time } = getPlaybackPosition();
 
-      // Load stream if different
       if (index !== currentIndex) {
         currentIndex = index;
-        loadStream(playlist[index], time);
+        loadMedia(playlist[index], streamTypes[index], time);
         updateBottomScrollText(index);
         return;
       }
 
-      // Resync if time drift
-      if (Math.abs(video.currentTime - time) > 2) {
-        video.currentTime = time;
+      const activeVideo = container.querySelector('video');
+      if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
+        activeVideo.currentTime = time;
       }
     }
 
-    // Start streaming and text updates
-    syncPlayback();
-    setInterval(syncPlayback, 1000);
+    initPlayer();
   </script>
-  <!-- ✅ GoatCounter manual trigger -->
-<script>
-  fetch("https://mstv.goatcounter.com/count?p=" + encodeURIComponent(location.pathname))
-    .then(() => console.log("GoatCounter manual ping sent"))
-    .catch((e) => console.warn("GoatCounter failed", e));
-</script>
+
+  <!-- GoatCounter manual trigger -->
+  <script>
+    fetch("https://mstv.goatcounter.com/count?p=" + encodeURIComponent(location.pathname))
+      .then(() => console.log("GoatCounter manual ping sent"))
+      .catch((e) => console.warn("GoatCounter failed", e));
+  </script>
 </body>
 </html>
