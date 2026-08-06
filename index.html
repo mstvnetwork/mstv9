@@ -4,119 +4,397 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="description" content="MSTV Network offers a variety of live TV channels including music, movies, and more. Watch your favorite channels online for free.">
+    <meta name="description" content="MSTV Network offers a variety of live TV channels, YouTube live streams, and 24/7 broadcast simulators. Watch online for free.">
     <meta name="robots" content="index, follow">
-  <title>m3u8 player</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <title>MSTV Network - Ultimate Media Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-  <style>
-    body {
-      background-color: #1a1a1a;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      text-align: center;
-      padding: 20px 10px;
-      background-color: #000;
-      font-size: 2.5em;
-      font-weight: bold;
-      color: #FFD700;
-    }
-    .scrolling-text {
-      overflow: hidden;
-      white-space: nowrap;
-      box-sizing: border-box;
-    }
-    .top-scrolling-text { background-color: #222; }
-    .bottom-scrolling-text { background-color: #004080; }
-    .scrolling-text p {
-      display: inline-block;
-      padding-left: 100%;
-      animation: scroll-left 15s linear infinite;
-      font-size: 1.2em;
-      color: #fff;
-    }
-    @keyframes scroll-left {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
-    }
-    .video-wrapper {
-      position: relative;
-      width: 90%;
-      max-width: 1280px;
-      margin: 30px auto;
-      padding-top: 56.25%;
-      background-color: black;
-    }
-    #videoContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-    #muteToggle {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white; font-size: 1.5em;
-      padding: 5px 10px; border-radius: 50%;
-      cursor: pointer; z-index: 10;
-    }
-    #liveStamp {
-      position: absolute;
-      top: 10px; left: 10px;
-      background-color: red; color: white;
-      font-weight: bold; padding: 5px 10px;
-      font-size: 0.9em; border-radius: 5px; z-index: 10;
-    }
-    footer {
-      background-color: black; color: yellow;
-      padding: 20px 10px; text-align: center; font-size: 0.9em;
-      margin-top: 40px;
-    }
-  </style>
+    <style>
+      /* Universal Reset & No Scroll Setup */
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body {
+        width: 100%;
+        height: 100vh;
+        background-color: #0f0f0f;
+        color: #ffffff;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden; /* Removes scrolling bars completely */
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 1. Stylish Header */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #111111, #1f1f1f);
+        border-bottom: 2px solid #FFD700;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        flex-shrink: 0;
+        z-index: 100;
+      }
+      .logo-area {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #FFD700;
+        letter-spacing: 1px;
+      }
+      .logo-area i { font-size: 1.4rem; color: #ff3333; }
+
+      /* 2. Fully Functional Search Bar */
+      .search-container {
+        position: relative;
+        width: 280px;
+      }
+      .search-container input {
+        width: 100%;
+        padding: 8px 15px 8px 35px;
+        background-color: #222;
+        border: 1px solid #444;
+        border-radius: 20px;
+        color: #fff;
+        font-size: 0.9rem;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+      .search-container input:focus {
+        border-color: #FFD700;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+      }
+      .search-container i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+        font-size: 0.9rem;
+      }
+
+      /* Search Results Popup */
+      .search-results-dropdown {
+        position: absolute;
+        top: 110%;
+        left: 0;
+        width: 100%;
+        background: #1e1e1e;
+        border: 1px solid #333;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+      }
+      .search-result-item {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border-bottom: 1px solid #2a2a2a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .search-result-item:hover { background-color: #333; color: #FFD700; }
+
+      /* Ticker Styles */
+      .scrolling-text {
+        overflow: hidden;
+        white-space: nowrap;
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+      .top-scrolling-text { background-color: #1a1a1a; border-bottom: 1px solid #2a2a2a; }
+      .bottom-scrolling-text { background-color: #0d233a; border-top: 1px solid #1a3c68; }
+      .scrolling-text p {
+        display: inline-block;
+        padding-left: 100%;
+        animation: scroll-left 20s linear infinite;
+        font-size: 0.95rem;
+        color: #ddd;
+        padding-top: 4px; padding-bottom: 4px;
+      }
+      @keyframes scroll-left {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+      }
+
+      /* Main Video Stage */
+      .video-stage-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #000;
+        position: relative;
+        width: 100%;
+        max-height: 55vh;
+        overflow: hidden;
+      }
+      .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-width: 1000px;
+        max-height: 56.25vw;
+        aspect-ratio: 16/9;
+        background-color: black;
+      }
+      #videoContainer {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #muteToggle {
+        position: absolute;
+        top: 12px; right: 12px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white; font-size: 1.2rem;
+        padding: 8px 12px; border-radius: 50%;
+        cursor: pointer; z-index: 10;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: background 0.2s;
+      }
+      #muteToggle:hover { background: rgba(255, 215, 0, 0.8); color: #000; }
+      #liveStamp {
+        position: absolute;
+        top: 12px; left: 12px;
+        background-color: #e50914; color: white;
+        font-weight: bold; padding: 4px 10px;
+        font-size: 0.8rem; border-radius: 4px; z-index: 10;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      }
+
+      /* 4. 3 Category Buttons & Collapsible Drawers */
+      .categories-nav-wrapper {
+        background-color: #141414;
+        padding: 10px 20px;
+        border-top: 1px solid #282828;
+        border-bottom: 1px solid #282828;
+        flex-shrink: 0;
+      }
+      .category-buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+      .cat-btn {
+        background: linear-gradient(to bottom, #262626, #1c1c1c);
+        color: #fff;
+        border: 1px solid #3d3d3d;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+      }
+      .cat-btn:hover, .cat-btn.active {
+        background: linear-gradient(to bottom, #FFD700, #cca600);
+        color: #000;
+        border-color: #FFD700;
+      }
+
+      /* Collapsible Transparent Subcategory Panels */
+      .collapsible-drawer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(20, 20, 20, 0.92);
+        backdrop-filter: blur(8px);
+        border-radius: 0 0 8px 8px;
+        margin-top: 5px;
+      }
+      .collapsible-drawer.open {
+        max-height: 140px;
+        border: 1px solid #333;
+        border-top: none;
+      }
+      .channels-scroll-row {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #555 transparent;
+      }
+      .channels-scroll-row::-webkit-scrollbar { height: 4px; }
+      .channels-scroll-row::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+
+      .channel-card {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 8px 12px;
+        width: 100px;
+        cursor: pointer;
+        transition: transform 0.2s, border-color 0.2s;
+      }
+      .channel-card:hover {
+        transform: translateY(-3px);
+        border-color: #FFD700;
+        background: #222;
+      }
+      .channel-card img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        border-radius: 50%;
+        margin-bottom: 6px;
+        background: #000;
+        padding: 2px;
+      }
+      .channel-card span {
+        font-size: 0.75rem;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+      }
+
+      /* 5. Professional Style Footer Section */
+      footer {
+        background-color: #0b0b0b;
+        color: #aaa;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        border-top: 1px solid #222;
+        flex-shrink: 0;
+      }
+      .footer-links {
+        display: flex;
+        gap: 20px;
+      }
+      .footer-links a {
+        color: #aaa;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .footer-links a:hover { color: #FFD700; }
+      .footer-right span { color: #FFD700; font-weight: 600; }
+
+      /* Responsive Adjustments for Mobile */
+      @media(max-width: 768px) {
+        header { flex-direction: column; gap: 10px; padding: 10px; }
+        .search-container { width: 100%; max-width: 300px; }
+        .category-buttons-container { gap: 8px; }
+        .cat-btn { padding: 6px 12px; font-size: 0.8rem; }
+        footer { flex-direction: column; gap: 8px; text-align: center; }
+      }
+    </style>
 </head>
 <body>
 
-  <header>MSTV NETWORK</header>
+  <!-- 1. Stylish Header with Search Bar -->
+  <header>
+    <div class="logo-area">
+      <i class="fa-solid fa-satellite-dish"></i> MSTV NETWORK
+    </div>
+    <div class="search-container">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="searchInput" placeholder="Search channels, videos...">
+      <div id="searchResultsDropdown" class="search-results-dropdown"></div>
+    </div>
+  </header>
 
+  <!-- Top Ticker -->
   <div class="scrolling-text top-scrolling-text">
     <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
   </div>
 
-  <div class="video-wrapper">
-    <div id="videoContainer">
-      <!-- Permanent elements for engine toggling -->
-      <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; display:none;"></video>
-      <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+  <!-- Video Stage Container -->
+  <div class="video-stage-container">
+    <div class="video-wrapper">
+      <div id="videoContainer">
+        <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; display:none;"></video>
+        <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+      </div>
+      <span id="muteToggle" title="Toggle Sound">🔈</span>
+      <div id="liveStamp">LIVE</div>
     </div>
-    <span id="muteToggle">🔈</span>
-    <div id="liveStamp">LIVE</div>
   </div>
     
+  <!-- Bottom EPG Update Ticker -->
   <div class="scrolling-text bottom-scrolling-text">
     <p>Loading schedule...</p>
   </div>
 
+  <!-- 4. Category Buttons & Collapsible Drawers Section -->
+  <div class="categories-nav-wrapper">
+    <div class="category-buttons-container">
+      <button class="cat-btn" data-target="apnaDrawer"><i class="fa-solid fa-tv"></i> Apna Tv Channel</button>
+      <button class="cat-btn" data-target="youtubeDrawer"><i class="fa-brands fa-youtube"></i> You Tube Live</button>
+      <button class="cat-btn" data-target="liveTvDrawer"><i class="fa-solid signal"></i> Live Tv</button>
+    </div>
+
+    <!-- Apna Tv Channel Drawer -->
+    <div id="apnaDrawer" class="collapsible-drawer">
+      <div class="channels-scroll-row" id="apnaChannelsList"></div>
+    </div>
+
+    <!-- YouTube Live Drawer -->
+    <div id="youtubeDrawer" class="collapsible-drawer">
+      <div class="channels-scroll-row" id="youtubeChannelsList"></div>
+    </div>
+
+    <!-- Live Tv Drawer -->
+    <div id="liveTvDrawer" class="collapsible-drawer">
+      <div class="channels-scroll-row" id="liveTvChannelsList"></div>
+    </div>
+  </div>
+
+  <!-- 5. Professional Style Footer Section -->
   <footer>
-    <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
+    <div class="footer-left">
+      © 2026 <span>MSTV INDIA</span>. All rights reserved.
+    </div>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Support</a>
+    </div>
+    <div class="footer-right">
+      Server Status: <span style="color: #2ecc71;"><i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Online</span>
+    </div>
   </footer>
 
-  <!-- HLS.js -->
+  <!-- HLS.js for seamless HLS playback -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const container = document.getElementById('videoContainer');
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
 
-    // Engine UI Nodes
     const $videoEl = document.getElementById('videoElement');
     const $iframeEl = document.getElementById('iframeElement');
     const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
+
+    // Data structures for 3-in-1 JSON
+    let broadcastSimulator = [];
+    let youtubeLiveList = [];
+    let liveTvList = [];
+    let allMediaItems = [];
 
     let playlist = [];
     let titles = [];
@@ -130,17 +408,16 @@
     let currentUrl = '';
     let currentType = '';
     let currentTimeOffset = 0;
+    let manualOverrideActive = false; // Prevents broadcast scheduler from interrupting manual selection
 
     muteToggle.textContent = '🔈';
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
       
-      // Handle native video / HLS stream
       $videoEl.muted = isMuted;
       if (!$videoEl.paused) $videoEl.play().catch(() => {});
 
-      // Handle iframe player (Instant YouTube postMessage unmuting)
       if (currentType === 'iframe' && currentUrl) {
         if (currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('youtube-nocookie.com')) {
           const command = isMuted ? '{"event":"command","func":"mute","args":""}' : '{"event":"command","func":"unMute","args":""}';
@@ -151,19 +428,35 @@
       }
     });
 
+    // Fetch unified JSON data
     async function fetchSchedule(isInitial = false) {
       try {
         const response = await fetch(`test.json?t=${Date.now()}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
-        if (!data.playlist || data.playlist.length === 0) throw new Error('Playlist is empty');
         
-        playlist = data.playlist.map(item => item.stream_url);
-        titles = data.playlist.map(item => item.title);
-        videoDurations = data.playlist.map(item => item.duration_seconds);
-        streamTypes = data.playlist.map(item => item.type || 'video');
-        totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+        // Populate sections
+        broadcastSimulator = data.broadcast_simulator || [];
+        youtubeLiveList = data.youtube_live || [];
+        liveTvList = data.live_tv_channels || [];
+        
+        // Combine all for search & UI rendering
+        allMediaItems = [
+          ...broadcastSimulator.map(item => ({ ...item, category: 'Apna Tv Channel' })),
+          ...youtubeLiveList,
+          ...liveTvList
+        ];
+
+        renderCategoryDrawers();
+
+        if (broadcastSimulator.length > 0) {
+          playlist = broadcastSimulator.map(item => item.stream_url);
+          titles = broadcastSimulator.map(item => item.title);
+          videoDurations = broadcastSimulator.map(item => item.duration_seconds || 60);
+          streamTypes = broadcastSimulator.map(item => item.type || 'video');
+          totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+        }
 
         if (isInitial) {
           syncPlayback();
@@ -173,6 +466,131 @@
         console.error('Failed to fetch test.json:', error);
       }
     }
+
+    // Render channels dynamically inside collapsible drawer rows
+    function renderCategoryDrawers() {
+      populateRow('apnaChannelsList', broadcastSimulator, 'Apna Tv Channel');
+      populateRow('youtubeChannelsList', youtubeLiveList, 'You Tube Live');
+      populateRow('liveTvChannelsList', liveTvList, 'Live Tv');
+    }
+
+    function populateRow(containerId, list, categoryName) {
+      const rowContainer = document.getElementById(containerId);
+      rowContainer.innerHTML = '';
+      if (!list || list.length === 0) {
+        rowContainer.innerHTML = '<span style="font-size:0.8rem; color:#777; padding:10px;">No channels available</span>';
+        return;
+      }
+      list.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'channel-card';
+        const logoUrl = item.logo || 'https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp';
+        const titleName = item.name || item.title || 'Channel';
+        
+        card.innerHTML = `
+          <img src="${logoUrl}" alt="${titleName}" onerror="this.src='https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp'">
+          <span>${titleName}</span>
+        `;
+        
+        card.addEventListener('click', () => {
+          manualOverrideActive = true;
+          const targetUrl = item.stream_url || item.url;
+          const targetType = item.type || 'hls';
+          
+          // Instant Playback & Auto Collapse Drawer
+          loadMedia(targetUrl, targetType, 0, item);
+          updateBottomScrollTextManual(titleName, categoryName);
+          collapseAllDrawers();
+        });
+        
+        rowContainer.appendChild(card);
+      });
+    }
+
+    // Category Collapsible Button Logic
+    const catButtons = document.querySelectorAll('.cat-btn');
+    const drawers = document.querySelectorAll('.collapsible-drawer');
+
+    catButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetDrawerId = btn.getAttribute('data-target');
+        const targetDrawer = document.getElementById(targetDrawerId);
+        const isOpen = targetDrawer.classList.contains('open');
+
+        collapseAllDrawers();
+
+        if (!isOpen) {
+          targetDrawer.classList.add('open');
+          btn.classList.add('active');
+        }
+      });
+    });
+
+    function collapseAllDrawers() {
+      drawers.forEach(d => d.classList.remove('open'));
+      catButtons.forEach(b => b.classList.remove('active'));
+    }
+
+    document.addEventListener('click', () => {
+      collapseAllDrawers();
+    });
+
+    drawers.forEach(d => {
+      d.addEventListener('click', (e) => e.stopPropagation());
+    });
+
+    // Search Bar Functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchDropdown = document.getElementById('searchResultsDropdown');
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      searchDropdown.innerHTML = '';
+      if (!query) {
+        searchDropdown.style.display = 'none';
+        return;
+      }
+
+      const matches = allMediaItems.filter(item => {
+        const name = (item.name || item.title || '').toLowerCase();
+        const cat = (item.category || '').toLowerCase();
+        return name.includes(query) || cat.includes(query);
+      });
+
+      if (matches.length === 0) {
+        searchDropdown.style.display = 'none';
+        return;
+      }
+
+      matches.forEach(match => {
+        const div = document.createElement('div');
+        div.className = 'search-result-item';
+        const logo = match.logo || 'https://cdn.jsdelivr.net/gh/mstvnetwork/mstv4/assets/indtv.webp';
+        const title = match.name || match.title;
+        div.innerHTML = `<img src="${logo}" style="width:20px;height:20px;border-radius:50%;object-fit:contain;"> <span>${title} <small style="color:#888;">(${match.category})</small></span>`;
+        
+        div.addEventListener('click', () => {
+          manualOverrideActive = true;
+          const url = match.stream_url || match.url;
+          const type = match.type || 'hls';
+          loadMedia(url, type, 0, match);
+          updateBottomScrollTextManual(title, match.category);
+          searchDropdown.style.display = 'none';
+          searchInput.value = '';
+          collapseAllDrawers();
+        });
+        searchDropdown.appendChild(div);
+      });
+
+      searchDropdown.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+        searchDropdown.style.display = 'none';
+      }
+    });
 
     function getPlaybackPosition() {
       if (totalDuration === 0) return { index: 0, time: 0 };
@@ -226,14 +644,10 @@
       }
     }
 
-    function showLoader(show) {
-      // Optional UI loader handler
-    }
+    function showLoader(show) {}
+    function showError(message) { console.error(message); }
 
-    function showError(message) {
-      console.error(message);
-    }
-
+    // Seamless Multi-Format Media Engine (HLS, DASH, MP4, YouTube Iframe)
     async function loadMedia(url, type, startTime, ch = {}) {
       if (!url) return;
       
@@ -260,8 +674,12 @@
           }
         }
 
-        // Engine Code Block for Iframe
+        // Clear active HLS stream to prevent background audio leaks
+        if (hls) { hls.destroy(); hls = null; }
+        $videoEl.pause();
+        $videoEl.src = '';
         $videoEl.style.display = 'none';
+        
         $iframeEl.style.display = 'block';
         if (ch.sandboxed !== false) $iframeEl.setAttribute('sandbox', SANDBOX_VALUE);
         else $iframeEl.removeAttribute('sandbox');
@@ -271,17 +689,14 @@
         $iframeEl.onerror = () => showError('iFrame error');
 
       } else if (isDashStream(type, streamUrl)) {
-        // Engine Code Block for DASH
         $iframeEl.style.display = 'none';
-        $iframeEl.style.display = ''; // Clear iframe src to stop background audio leak
-        $iframeEl.src = '';
+        $iframeEl.src = ''; // Terminate iframe background streams
         $videoEl.style.display = 'block';
         
         await playDASH(streamUrl, startTime);
       } else {
-        // Engine Code Block for HLS / Default
         $iframeEl.style.display = 'none';
-        $iframeEl.src = ''; // Clear iframe src to stop background audio leak
+        $iframeEl.src = ''; // Terminate iframe background streams
         $videoEl.style.display = 'block';
         
         await playHLS(streamUrl, startTime);
@@ -294,8 +709,12 @@
       bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next: ${comingNext}`;
     }
 
+    function updateBottomScrollTextManual(title, category) {
+      bottomScrollText.textContent = `Custom Stream Active: ${title} [Category: ${category}] — Enjoy Live Broadcast!`;
+    }
+
     function syncPlayback() {
-      if (totalDuration === 0) return;
+      if (manualOverrideActive || totalDuration === 0) return;
       const { index, time } = getPlaybackPosition();
 
       if (index !== currentIndex) {
@@ -313,7 +732,9 @@
     async function initPlayer() {
       await fetchSchedule(true);
       setInterval(() => {
-        fetchSchedule(false);
+        if (!manualOverrideActive) {
+          fetchSchedule(false);
+        }
       }, 10000);
     }
 
