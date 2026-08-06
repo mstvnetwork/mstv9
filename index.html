@@ -166,7 +166,7 @@
     }
 
     function loadMedia(url, type, startTime) {
-      if (!url) return; // Safety check to prevent trim errors
+      if (!url) return;
       
       if (hls) {
         hls.destroy();
@@ -181,8 +181,13 @@
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
-        iframe.style.pointerEvents = 'none';
-        iframe.sandbox = "allow-scripts allow-same-origin";
+        
+        // REMOVED pointer-events: none so users can click player controls/ads natively
+        // iframe.style.pointerEvents = 'none'; 
+
+        // Secure sandbox: allows playback/controls, but blocks top-level redirects and popups
+        iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
+        
         container.appendChild(iframe);
       } else {
         const video = document.createElement('video');
@@ -193,7 +198,7 @@
         video.style.width = '100%';
         video.style.height = '100%';
         video.style.objectFit = 'cover';
-        video.style.pointerEvents = 'none';
+        video.style.pointerEvents = 'none'; // Keeps direct video files completely un-skippable
         video.style.userSelect = 'none';
 
         container.appendChild(video);
@@ -220,7 +225,7 @@
           video.play().catch(() => {});
         }
       }
-    }
+            }
 
     function updateBottomScrollText(index) {
       const nowPlaying = titles[index] || "Unknown";
