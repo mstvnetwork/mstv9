@@ -12,7 +12,7 @@
       "id": 2,
       "title": "Embedded Stream (Iframe Sandbox Test)",
       "type": "iframe",
-      "duration_seconds": 60,
+      "duration_seconds": 120,
       "stream_url": "https://www.youtube.com/embed/J7ac_o8a2-4?si=yOCUuR8QY1qIM8HBautoplay=1&mute=1&controls=0"
     },
     {
