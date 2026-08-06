@@ -5,43 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="MSTV Network offers a variety of live TV channels including music, movies, and more. Watch your favorite channels online for free.">
-    <meta name="keywords" content="live TV, MSTV Network, free TV, live channels, streaming, music, bollywood, saga music">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="MSTV Network">
-    <meta property="og:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
-    <meta property="og:url" content="https://mstvnet.netlify.app/">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="MSTV Network">
-    <meta name="twitter:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
-    <meta name="twitter:url" content="https://mstvnet.netlify.app/">
-
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        "name": "MSTV Network",
-        "description": "Stream live TV channels including music, movies, and more.",
-        "url": "https://mstvnet.netlify.app",
-        "publisher": {
-            "@type": "Organization",
-            "name": "MSTV Network",
-            "logo": {
-                "@type": "ImageObject",
-                "url": "https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png"
-            }
-        }
-    }
-    </script>
-
-    <!-- GoatCounter script -->
-    <script data-goatcounter="https://mstv.goatcounter.com/count"
-            async src="https://gc.zgo.at/count.js"></script>
-
   <title>m3u8 player</title>
-
-  <!-- Font Awesome for social icon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
   <style>
@@ -52,7 +17,6 @@
       margin: 0;
       padding: 0;
     }
-
     header {
       text-align: center;
       padding: 20px 10px;
@@ -61,21 +25,13 @@
       font-weight: bold;
       color: #FFD700;
     }
-
     .scrolling-text {
       overflow: hidden;
       white-space: nowrap;
       box-sizing: border-box;
     }
-
-    .top-scrolling-text {
-      background-color: #222;
-    }
-
-    .bottom-scrolling-text {
-      background-color: #004080;
-    }
-
+    .top-scrolling-text { background-color: #222; }
+    .bottom-scrolling-text { background-color: #004080; }
     .scrolling-text p {
       display: inline-block;
       padding-left: 100%;
@@ -83,21 +39,18 @@
       font-size: 1.2em;
       color: #fff;
     }
-
     @keyframes scroll-left {
       0% { transform: translateX(0); }
       100% { transform: translateX(-100%); }
     }
-
     .video-wrapper {
       position: relative;
       width: 90%;
       max-width: 1280px;
       margin: 30px auto;
-      padding-top: 56.25%; /* 16:9 aspect ratio */
+      padding-top: 56.25%;
       background-color: black;
     }
-
     #videoContainer {
       position: absolute;
       top: 0; left: 0;
@@ -105,140 +58,49 @@
       height: 100%;
       overflow: hidden;
     }
-
     #muteToggle {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 10px; right: 10px;
       background: rgba(0, 0, 0, 0.5);
-      color: white;
-      font-size: 1.5em;
-      padding: 5px 10px;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 10;
+      color: white; font-size: 1.5em;
+      padding: 5px 10px; border-radius: 50%;
+      cursor: pointer; z-index: 10;
     }
-
     #liveStamp {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: red;
-      color: white;
-      font-weight: bold;
-      padding: 5px 10px;
-      font-size: 0.9em;
-      border-radius: 5px;
-      z-index: 10;
+      top: 10px; left: 10px;
+      background-color: red; color: white;
+      font-weight: bold; padding: 5px 10px;
+      font-size: 0.9em; border-radius: 5px; z-index: 10;
     }
-
-    .image-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-      padding: 20px;
-    }
-
-    .image-grid img {
-      width: 100%;
-      height: 100px;
-      object-fit: cover;
-      border: 2px solid #333;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    }
-
-    .social {
-      text-align: center;
-      margin: 30px 0;
-    }
-
-    .social a {
-      text-decoration: none;
-      color: #FFD700;
-      font-size: 1.2em;
-    }
-
-    .social i {
-      margin-right: 8px;
-      color: #1877f2;
-    }
-
     footer {
-      background-color: black;
-      color: yellow;
-      padding: 20px 10px;
-      text-align: center;
-      font-size: 0.9em;
-    }
-
-    @media (max-width: 768px) {
-      header { font-size: 1.8em; }
-      .scrolling-text p { font-size: 1em; }
+      background-color: black; color: yellow;
+      padding: 20px 10px; text-align: center; font-size: 0.9em;
+      margin-top: 40px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Page Header -->
   <header>MSTV NETWORK</header>
 
-  <!-- Top Scrolling Text -->
   <div class="scrolling-text top-scrolling-text">
     <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
   </div>
 
-  <!-- Video / Embed Wrapper Section -->
   <div class="video-wrapper">
-    <div id="videoContainer">
-      <!-- Dynamic media target inserted here -->
-    </div>
+    <div id="videoContainer"></div>
     <span id="muteToggle">🔈</span>
     <div id="liveStamp">LIVE</div>
   </div>
     
-  <!-- Bottom Scrolling Text (dynamic) -->
   <div class="scrolling-text bottom-scrolling-text">
     <p>Loading schedule...</p>
   </div>
-  
-   <!-- Social Links -->
-  <div class="social">
-    <a href="https://facebook.com" target="_blank">
-      <i class="fab fa-facebook"></i>Click to follow
-    </a>
-  </div>
-  <header>OUR PARTNERS</header>
-  
- <!-- Image Grid -->
-  <div class="image-grid">
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(1).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.png" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(4).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/live-sports-plus-hd-otk-logo.webp" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/81GCH6UU7qL.png" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(2).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(1).png" />
-  </div>
 
- <footer>
-  <div class="footer-section">
-    <div class="footer-column">
-      <h2>About Us</h2>
-      <p>MSTV Network is a free streaming platform bringing you 24/7 access to music, movies, news, kids content, and more. We aim to deliver high-quality entertainment for audiences worldwide — no subscriptions, no hidden fees.</p>
-      <h3>⚠️ Disclaimer</h3>
-      <p>MSTV Network streams content freely available on public platforms. We do not host or claim ownership of any third-party media. All copyrights remain with their respective owners.</p>
-      <h4>📜 Terms of Service</h4>
-      <p>By using MSTV Network, you agree to view content solely for personal, non-commercial use. We are not responsible for third-party streams or their availability. Continued use constitutes acceptance of these terms.</p>
-    </div>
-    <div class="footer-column">
-      <h2>Contact</h2>
-      <p>Email: contact@mstvindia.com</p>
-      <p>Phone: +001-305-242-4447</p>
-    </div>
-  </div>
-  <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
-</footer>
+  <footer>
+    <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
+  </footer>
 
   <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -261,7 +123,6 @@
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
-      
       const activeVideo = container.querySelector('video');
       if (activeVideo) {
         activeVideo.muted = isMuted;
@@ -272,7 +133,10 @@
     async function initPlayer() {
       try {
         const response = await fetch('test.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
+        if (!data.playlist || data.playlist.length === 0) throw new Error('Playlist is empty in test.json');
         
         playlist = data.playlist.map(item => item.stream_url);
         titles = data.playlist.map(item => item.title);
@@ -283,12 +147,13 @@
         syncPlayback();
         setInterval(syncPlayback, 1000);
       } catch (error) {
-        console.error('Failed to load test.json:', error);
-        bottomScrollText.textContent = 'Error loading schedule.';
+        console.error('Player initialization failed:', error);
+        bottomScrollText.textContent = 'Error: Could not load test.json schedule configuration.';
       }
     }
 
     function getPlaybackPosition() {
+      if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
       let offset = 0;
       for (let i = 0; i < videoDurations.length; i++) {
@@ -301,6 +166,8 @@
     }
 
     function loadMedia(url, type, startTime) {
+      if (!url) return; // Safety check to prevent trim errors
+      
       if (hls) {
         hls.destroy();
         hls = null;
@@ -316,7 +183,6 @@
         iframe.style.border = 'none';
         iframe.style.pointerEvents = 'none';
         iframe.sandbox = "allow-scripts allow-same-origin";
-        
         container.appendChild(iframe);
       } else {
         const video = document.createElement('video');
@@ -357,9 +223,9 @@
     }
 
     function updateBottomScrollText(index) {
-      const nowPlaying = titles[index];
-      const comingNext = titles[(index + 1) % titles.length];
-      bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next: ${comingNext}`;
+      const nowPlaying = titles[index] || "Unknown";
+      const comingNext = titles[(index + 1) % titles.length] || "Unknown";
+      bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next:${comingNext}`;
     }
 
     function syncPlayback() {
@@ -380,13 +246,6 @@
     }
 
     initPlayer();
-  </script>
-
-  <!-- GoatCounter manual trigger -->
-  <script>
-    fetch("https://mstv.goatcounter.com/count?p=" + encodeURIComponent(location.pathname))
-      .then(() => console.log("GoatCounter manual ping sent"))
-      .catch((e) => console.warn("GoatCounter failed", e));
   </script>
 </body>
 </html>
