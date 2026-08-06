@@ -188,7 +188,13 @@
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
+        
+        // Add explicit permissions policy allow attributes to silence sensor/accelerometer warnings
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        
+        // Secure sandbox: allows player controls, scripts, and media, but blocks top-level redirects/popups
         iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
+        
         container.appendChild(iframe);
       } else {
         const video = document.createElement('video');
