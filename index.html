@@ -142,6 +142,7 @@
         width: 100%;
         height: 100%;
         position: relative;
+        overflow: hidden;
       }
 
       #videoContainer video, 
@@ -150,6 +151,30 @@
         height: 100%;
         object-fit: contain;
         border: none;
+      }
+
+      /* Shield Top Title / Share Bar (Blocks top redirect clicks) */
+      .yt-shield-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        z-index: 10;
+        background: transparent;
+        pointer-events: auto;
+      }
+
+      /* Shield Bottom-Right YouTube Logo (Blocks bottom logo redirect) */
+      .yt-shield-logo {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 120px;
+        height: 50px;
+        z-index: 10;
+        background: transparent;
+        pointer-events: auto;
       }
 
       /* Placeholder Overlay on First Visit */
@@ -612,24 +637,47 @@
       container.innerHTML = '';
 
       if (item.type === 'iframe') {
-        const iframe = document.createElement('iframe');
-        
-        // Remove mute=1 parameter if unmuted is expected
         let finalUrl = item.stream_url;
-        if (!isMuted) {
-          finalUrl = finalUrl.replace('mute=1', 'mute=0');
-        } else {
-          finalUrl = finalUrl.replace('mute=0', 'mute=1');
+
+        // Strip/append parameters to minimize popups & align mute status
+        if (finalUrl.includes('youtube.com')) {
+          const urlObj = new URL(finalUrl);
+          urlObj.searchParams.set('modestbranding', '1');
+          urlObj.searchParams.set('rel', '0');
+          urlObj.searchParams.set('iv_load_policy', '3');
+          urlObj.searchParams.set('enablejsapi', '1');
+          
+          if (!isMuted) {
+            urlObj.searchParams.set('mute', '0');
+          } else {
+            urlObj.searchParams.set('mute', '1');
+          }
+          finalUrl = urlObj.toString();
         }
 
+        const iframe = document.createElement('iframe');
         iframe.src = finalUrl;
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
         
+        // Strict anti-redirect sandbox (blocks new tabs/popups while keeping ad controls usable)
+        iframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-presentation";
+
         iframe.onload = () => {
           hideSpinner();
         };
 
         container.appendChild(iframe);
+
+        // Append transparent click-shields over top title bar & bottom YouTube logo
+        const shieldTop = document.createElement('div');
+        shieldTop.className = 'yt-shield-top';
+        
+        const shieldLogo = document.createElement('div');
+        shieldLogo.className = 'yt-shield-logo';
+
+        container.appendChild(shieldTop);
+        container.appendChild(shieldLogo);
+
       } else {
         const video = document.createElement('video');
         video.autoplay = true;
