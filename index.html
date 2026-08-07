@@ -601,7 +601,7 @@
     const subcategoriesGrid = document.getElementById('subcategoriesGrid');
     const currentTimeEl = document.getElementById('currentTime');
 
-    // Live TV Subcategory Definitions (Icons and Labels)
+    // Live TV Subcategory Definitions
     const liveTvCategories = [
       { key: 'sports', label: 'Sports', icon: 'fa-basketball' },
       { key: 'music', label: 'Music', icon: 'fa-music' },
@@ -625,6 +625,20 @@
     let syncTimer = null;
     let activeSubcatKey = null;
 
+    // State tracking variables for forward-skip prevention & buffering sync lock
+    let ytPlayer = null;
+    let maxWatchedTime = 0;
+    let ytCheckInterval = null;
+    let isInitialLoading = false; 
+
+    // Load YouTube API script dynamically
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
     function updateClock() {
       const now = new Date();
       currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -646,6 +660,9 @@
       updateMuteButtonUI();
       const activeVideo = container.querySelector('video');
       if (activeVideo) activeVideo.muted = isMuted;
+      if (ytPlayer && typeof ytPlayer.mute === 'function') {
+        if (isMuted) ytPlayer.mute(); else ytPlayer.unMute();
+      }
     });
 
     fullscreenToggle.addEventListener('click', () => {
@@ -703,17 +720,12 @@
         
         subcatBtn.onclick = (e) => {
           e.stopPropagation();
-          if (activeSubcatKey === cat.key) {
-            activeSubcatKey = null;
-          } else {
-            activeSubcatKey = cat.key;
-          }
+          activeSubcatKey = (activeSubcatKey === cat.key) ? null : cat.key;
           renderLiveTvSubcategories();
         };
 
         subcategoriesGrid.appendChild(subcatBtn);
 
-        // If this subcategory is expanded, append its channel list inline
         if (activeSubcatKey === cat.key) {
           const channelList = document.createElement('div');
           channelList.className = 'channels-list active';
@@ -756,7 +768,6 @@
       loadMedia(currentPlaylist[index], 0);
       epgTickerText.textContent = `LIVE TV (${subcatLabel.toUpperCase()}): ${currentPlaylist[index].title}`;
 
-      // Collapse menu back after channel selection
       closeSubcategoryMenu();
     }
 
@@ -806,154 +817,137 @@
       return { index: 0, time: 0 };
     }
 
-    // State tracking variables for forward-skip prevention
-let ytPlayer = null;
-let maxWatchedTime = 0;
-let ytCheckInterval = null;
+    function loadMedia(item, startTime) {
+      showSpinner();
+      isInitialLoading = true; // Lock playback sync while buffering
 
-// Load YouTube API script once dynamically
-if (!window.YT) {
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-}
+      maxWatchedTime = startTime || 0;
+      if (ytCheckInterval) clearInterval(ytCheckInterval);
 
-function loadMedia(item, startTime) {
-  showSpinner();
+      if (hls) {
+        hls.stopLoad();
+        hls.detachMedia();
+        hls.destroy();
+        hls = null;
+      }
 
-  // Reset tracking state
-  maxWatchedTime = 0;
-  if (ytCheckInterval) clearInterval(ytCheckInterval);
+      if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+        ytPlayer.destroy();
+        ytPlayer = null;
+      }
 
-  // Clean up previous HLS instance
-  if (hls) {
-    hls.stopLoad();
-    hls.detachMedia();
-    hls.destroy();
-    hls = null;
-  }
+      container.innerHTML = '';
 
-  // Clean up previous YouTube player instance
-  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-    ytPlayer.destroy();
-    ytPlayer = null;
-  }
+      if (item.type === 'iframe') {
+        const videoIdMatch = item.stream_url.match(/(?:embed\/|v=)([^&?]+)/);
+        const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
-  container.innerHTML = '';
+        if (videoId) {
+          const playerDiv = document.createElement('div');
+          playerDiv.id = 'ytApiPlayer';
+          container.appendChild(playerDiv);
 
-  if (item.type === 'iframe') {
-    // Extract video ID from URL
-    const videoIdMatch = item.stream_url.match(/(?:embed\/|v=)([^&?]+)/);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-
-    if (videoId) {
-      // Create a target div for YouTube API
-      const playerDiv = document.createElement('div');
-      playerDiv.id = 'ytApiPlayer';
-      container.appendChild(playerDiv);
-
-      // Initialize YouTube Player via API
-      ytPlayer = new YT.Player('ytApiPlayer', {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 1,       // Show controls so user can see scrub bar
-          modestbranding: 1,
-          rel: 0,
-          enablejsapi: 1,
-          mute: isMuted ? 1 : 0
-        },
-        events: {
-          onReady: (event) => {
-            hideSpinner();
-            event.target.playVideo();
-            startSkipPreventionMonitor();
-          },
-          onStateChange: (event) => {
-            // Unmute/Mute synchronization if needed
-            if (event.data === YT.PlayerState.PLAYING) {
-              hideSpinner();
+          ytPlayer = new YT.Player('ytApiPlayer', {
+            height: '100%',
+            width: '100%',
+            videoId: videoId,
+            playerVars: {
+              autoplay: 1,
+              controls: 1,
+              modestbranding: 1,
+              rel: 0,
+              enablejsapi: 1,
+              mute: isMuted ? 1 : 0,
+              start: Math.floor(startTime)
+            },
+            events: {
+              onReady: (event) => {
+                hideSpinner();
+                event.target.playVideo();
+                startSkipPreventionMonitor();
+                setTimeout(() => { isInitialLoading = false; }, 3000);
+              },
+              onStateChange: (event) => {
+                if (event.data === YT.PlayerState.PLAYING) {
+                  hideSpinner();
+                  isInitialLoading = false;
+                }
+              }
             }
+          });
+        } else {
+          const iframe = document.createElement('iframe');
+          iframe.src = item.stream_url;
+          iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+          iframe.onload = () => {
+            hideSpinner();
+            isInitialLoading = false;
+          };
+          container.appendChild(iframe);
+        }
+
+      } else {
+        // Standard HTML5 / HLS Video Logic
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.muted = isMuted;
+        video.playsInline = true;
+        video.preload = 'auto';
+
+        video.addEventListener('playing', () => {
+          hideSpinner();
+          setTimeout(() => { isInitialLoading = false; }, 1000);
+        });
+
+        container.appendChild(video);
+
+        video.addEventListener('timeupdate', () => {
+          if (video.currentTime > maxWatchedTime + 2.5) {
+            video.currentTime = maxWatchedTime;
+          } else {
+            maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
+          }
+        });
+
+        if (item.stream_url.includes('.m3u8')) {
+          if (Hls.isSupported()) {
+            hls = new Hls({ enableWorker: true, lowLatencyMode: false });
+            hls.loadSource(item.stream_url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              if (startTime > 0) video.currentTime = startTime;
+              video.play().catch(() => {});
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = item.stream_url;
+            video.addEventListener('loadedmetadata', () => {
+              if (startTime > 0) video.currentTime = startTime;
+              video.play().catch(() => {});
+            }, { once: true });
+          }
+        } else {
+          video.src = item.stream_url;
+          video.addEventListener('loadedmetadata', () => {
+            if (startTime > 0) video.currentTime = startTime;
+            video.play().catch(() => {});
+          }, { once: true });
+        }
+      }
+    }
+
+    function startSkipPreventionMonitor() {
+      ytCheckInterval = setInterval(() => {
+        if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+          const currentTime = ytPlayer.getCurrentTime();
+
+          if (currentTime > maxWatchedTime + 2.5) {
+            ytPlayer.seekTo(maxWatchedTime, true);
+          } else {
+            maxWatchedTime = Math.max(maxWatchedTime, currentTime);
           }
         }
-      });
-    } else {
-      // Fallback for non-YouTube embedded iframes
-      const iframe = document.createElement('iframe');
-      iframe.src = item.stream_url;
-      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-      iframe.onload = () => hideSpinner();
-      container.appendChild(iframe);
+      }, 250);
     }
-
-  } else {
-    // Standard HTML5 / HLS Video Logic
-    const video = document.createElement('video');
-    video.autoplay = true;
-    video.muted = isMuted;
-    video.playsInline = true;
-    video.preload = 'auto';
-
-    video.addEventListener('playing', () => hideSpinner());
-    video.addEventListener('canplay', () => video.play().catch(() => {}));
-
-    container.appendChild(video);
-
-    // Skip prevention for standard HTML5/HLS videos
-    video.addEventListener('timeupdate', () => {
-      if (video.currentTime > maxWatchedTime + 2) {
-        // User skipped forward -> revert back
-        video.currentTime = maxWatchedTime;
-      } else {
-        // Normal playback -> continuously update maximum watched point
-        maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
-      }
-    });
-
-    if (item.stream_url.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-        hls.loadSource(item.stream_url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.currentTime = startTime;
-          video.play().catch(() => {});
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = item.stream_url;
-        video.addEventListener('loadedmetadata', () => {
-          video.currentTime = startTime;
-          video.play().catch(() => {});
-        }, { once: true });
-      }
-    } else {
-      video.src = item.stream_url;
-      video.currentTime = startTime;
-      video.play().catch(() => {});
-    }
-  }
-}
-
-// Polling interval monitor to block skipping forward
-function startSkipPreventionMonitor() {
-  ytCheckInterval = setInterval(() => {
-    if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
-      const currentTime = ytPlayer.getCurrentTime();
-
-      // Detect if user skipped forward by more than 2 seconds past max watched time
-      if (currentTime > maxWatchedTime + 2) {
-        // Revert back to max watched timestamp
-        ytPlayer.seekTo(maxWatchedTime, true);
-      } else {
-        // Normal continuous playback: track furthest time reached
-        maxWatchedTime = Math.max(maxWatchedTime, currentTime);
-      }
-    }
-  }, 250); // Checks 4 times per second
-}
 
     function updateEpgTicker(index) {
       if (!currentPlaylist[index]) return;
@@ -965,7 +959,7 @@ function startSkipPreventionMonitor() {
     }
 
     function syncPlayback() {
-      if (activeCategory === 'live_tv' || totalDuration === 0 || currentPlaylist.length === 0) return;
+      if (activeCategory === 'live_tv' || totalDuration === 0 || currentPlaylist.length === 0 || isInitialLoading) return;
       
       const { index, time } = getPlaybackPosition();
 
@@ -977,7 +971,14 @@ function startSkipPreventionMonitor() {
       }
 
       const activeVideo = container.querySelector('video');
-      if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
+      // Only seek if video is ready, not seeking, not paused, and drift exceeds 6 seconds
+      if (
+        activeVideo && 
+        !activeVideo.seeking && 
+        !activeVideo.paused && 
+        activeVideo.readyState >= 3 && 
+        Math.abs(activeVideo.currentTime - time) > 6
+      ) {
         activeVideo.currentTime = time;
       }
     }
