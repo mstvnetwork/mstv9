@@ -578,96 +578,64 @@
 
   <!-- HLS Library -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.js"></script>
+<script>
+    // ==========================================
+// MSTV Player Script with YouTube & HLS Handling
+// ==========================================
 
-  <script>
-    function setAppHeight() {
-      const doc = document.documentElement;
-      doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+// Global state tracking variables
+let ytPlayer = null;
+let maxWatchedTime = 0;
+let ytCheckInterval = null;
+let hls = null;
+
+// Clean up existing players to release CPU/Memory before loading new stream
+function cleanupPlayers() {
+  // 1. Clear active YouTube monitoring timer
+  if (ytCheckInterval) {
+    clearInterval(ytCheckInterval);
+    ytCheckInterval = null;
+  }
+
+  // 2. Clean up HLS instance safely
+  if (hls) {
+    try {
+      hls.stopLoad();
+      hls.detachMedia();
+      hls.destroy();
+    } catch (e) {
+      console.warn('HLS cleanup warning:', e);
     }
-    window.addEventListener('resize', setAppHeight);
-    window.addEventListener('orientationchange', setAppHeight);
-    setAppHeight();
+    hls = null;
+  }
 
-    // DOM Elements
-    const container = document.getElementById('videoContainer');
-    const playerWrapper = document.getElementById('playerWrapper');
-    const playerPlaceholder = document.getElementById('playerPlaceholder');
-    const muteToggle = document.getElementById('muteToggle');
-    const fullscreenToggle = document.getElementById('fullscreenToggle');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const epgTickerText = document.getElementById('epgTickerText');
-    const btnApnaTv = document.getElementById('btnApnaTv');
-    const btnYouTube = document.getElementById('btnYouTube');
-    const btnLiveTv = document.getElementById('btnLiveTv');
-    const subcategoriesMenu = document.getElementById('subcategoriesMenu');
-    const subcategoriesGrid = document.getElementById('subcategoriesGrid');
-    const currentTimeEl = document.getElementById('currentTime');
-
-    // Live TV Subcategory Definitions (Icons and Labels)
-    const liveTvCategories = [
-      { key: 'sports', label: 'Sports', icon: 'fa-basketball' },
-      { key: 'music', label: 'Music', icon: 'fa-music' },
-      { key: 'news', label: 'News', icon: 'fa-newspaper' },
-      { key: 'devotional', label: 'Devotional', icon: 'fa-om' },
-      { key: 'android_pc', label: 'Android/PC', icon: 'fa-mobile-screen-button' },
-      { key: 'entertainment', label: 'Entertainment', icon: 'fa-film' }
-    ];
-
-    // State Variables
-    let rawPlaylists = {};
-    let liveTvData = {};
-    let activeCategory = null;
-    let currentPlaylist = [];
-    let videoDurations = [];
-    let totalDuration = 0;
-    
-    let hls = null;
-    let currentIndex = -1;
-    let isMuted = true;
-    let syncTimer = null;
-    let activeSubcatKey = null;
-
-    function updateClock() {
-      const now = new Date();
-      currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    function updateMuteButtonUI() {
-      muteToggle.innerHTML = isMuted 
-        ? '<i class="fa-solid fa-volume-xmark"></i>' 
-        : '<i class="fa-solid fa-volume-high"></i>';
-    }
-
-    function showSpinner() { loadingSpinner.classList.add('active'); }
-    function hideSpinner() { loadingSpinner.classList.remove('active'); }
-
-    muteToggle.addEventListener('click', () => {
-      isMuted = !isMuted;
-      updateMuteButtonUI();
-      const activeVideo = container.querySelector('video');
-      if (activeVideo) activeVideo.muted = isMuted;
-    });
-
-    fullscreenToggle.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        playerWrapper.requestFullscreen().catch(err => console.error(err));
-      } else {
-        document.exitFullscreen();
+  // 3. Clean up YouTube player instance without blocking execution
+  if (ytPlayer) {
+    if (typeof ytPlayer.destroy === 'function') {
+      try {
+        ytPlayer.destroy();
+      } catch (e) {
+        console.warn('YouTube cleanup warning:', e);
       }
-    });
+    }
+    ytPlayer = null;
+  }
+}
 
-    // Fetch JSON Data
+// Main function to load media streams
 function loadMedia(item, startTime = 0) {
   showSpinner();
   
+  // Clean up existing active players
   cleanupPlayers();
   
-  // 1. Properly set maxWatchedTime to initial start position
+  // Sync watch tracking point to initial start position
   maxWatchedTime = startTime;
   container.innerHTML = '';
 
+  // ----------------------------------------
+  // OPTION A: YouTube / Embed Iframes
+  // ----------------------------------------
   if (item.type === 'iframe') {
     const videoIdMatch = item.stream_url.match(/(?:embed\/|v=)([^&?]+)/);
     const videoId = videoIdMatch ? videoIdMatch[1] : null;
@@ -703,6 +671,7 @@ function loadMedia(item, startTime = 0) {
         }
       });
     } else {
+      // Direct iframe fallback
       const iframe = document.createElement('iframe');
       iframe.src = item.stream_url;
       iframe.allow = "autoplay; encrypted-media; picture-in-picture";
@@ -710,6 +679,9 @@ function loadMedia(item, startTime = 0) {
       container.appendChild(iframe);
     }
 
+  // ----------------------------------------
+  // OPTION B: Native Video & HLS (.m3u8 / .mp4)
+  // ----------------------------------------
   } else {
     const video = document.createElement('video');
     video.autoplay = true;
@@ -717,36 +689,38 @@ function loadMedia(item, startTime = 0) {
     video.playsInline = true;
     video.preload = 'auto';
 
-    // Flag to prevent skip enforcement while initial buffering/seeking happens
+    // Gate to prevent skip enforcement during initial buffering/seeking
     let isInitialLoading = true;
 
     video.addEventListener('playing', () => {
       hideSpinner();
-      // Enable skip-prevention only after video is actively playing smoothly
+      // Enable skip-prevention 500ms after playback smooths out
       setTimeout(() => { isInitialLoading = false; }, 500);
     });
 
     container.appendChild(video);
 
-    // Skip prevention logic for HTML5 / HLS
+    // Skip prevention logic for HTML5/HLS streams
     video.addEventListener('timeupdate', () => {
-      // Ignore checks while initial loading, seeking, or if paused
       if (isInitialLoading || video.seeking || video.paused) return;
 
       if (video.currentTime > maxWatchedTime + 2) {
+        // Revert back if user skips forward past watched point
         video.currentTime = maxWatchedTime;
       } else {
+        // Smoothly advance maximum watched position
         maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
       }
     });
 
+    // Handle HLS streams
     if (item.stream_url.includes('.m3u8')) {
       if (Hls.isSupported()) {
         hls = new Hls({ 
           enableWorker: true, 
-          lowLatencyMode: false,          // Turn off low latency to prevent frame drops on cold start
-          capLevelToPlayerSize: true,     // Match stream quality to container size
-          startLevel: -1,                  // Automatic adaptive bitrate start
+          lowLatencyMode: false,          // Off to prevent stuttering on cold start
+          capLevelToPlayerSize: true,     // Match stream resolution to player size
+          startLevel: -1,                  // Auto adaptive bitrate selection
           maxBufferLength: 30,
           backBufferLength: 15
         });
@@ -761,6 +735,7 @@ function loadMedia(item, startTime = 0) {
           video.play().catch(() => {});
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native Safari/iOS HLS support
         video.src = item.stream_url;
         video.addEventListener('loadedmetadata', () => {
           if (startTime > 0) video.currentTime = startTime;
@@ -768,326 +743,32 @@ function loadMedia(item, startTime = 0) {
         }, { once: true });
       }
     } else {
+      // Standard MP4 stream handling
       video.src = item.stream_url;
       if (startTime > 0) video.currentTime = startTime;
       video.play().catch(() => {});
     }
   }
-    }
-
-    // Toggle Live TV Collapsible Subcategories Menu
-    function toggleLiveTvMenu() {
-      const isOpen = subcategoriesMenu.classList.contains('active');
-      if (isOpen) {
-        closeSubcategoryMenu();
-      } else {
-        subcategoriesMenu.classList.add('active');
-        btnLiveTv.className = 'category-btn active livetv';
-      }
-    }
-
-    function closeSubcategoryMenu() {
-      subcategoriesMenu.classList.remove('active');
-      activeSubcatKey = null;
-      renderLiveTvSubcategories();
-      if (activeCategory !== 'live_tv') {
-        btnLiveTv.className = 'category-btn';
-      }
-    }
-
-    // Render Subcategory Buttons & Embedded Collapsible Channels List
-    function renderLiveTvSubcategories() {
-      subcategoriesGrid.innerHTML = '';
-
-      liveTvCategories.forEach(cat => {
-        const channels = liveTvData[cat.key] || [];
-
-        const subcatBtn = document.createElement('button');
-        subcatBtn.className = `subcat-btn ${activeSubcatKey === cat.key ? 'active' : ''}`;
-        subcatBtn.innerHTML = `<span><i class="fa-solid ${cat.icon}" style="margin-right:4px;"></i>${cat.label}</span> <i class="fa-solid ${activeSubcatKey === cat.key ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>`;
-        
-        subcatBtn.onclick = (e) => {
-          e.stopPropagation();
-          if (activeSubcatKey === cat.key) {
-            activeSubcatKey = null;
-          } else {
-            activeSubcatKey = cat.key;
-          }
-          renderLiveTvSubcategories();
-        };
-
-        subcategoriesGrid.appendChild(subcatBtn);
-
-        // If this subcategory is expanded, append its channel list inline
-        if (activeSubcatKey === cat.key) {
-          const channelList = document.createElement('div');
-          channelList.className = 'channels-list active';
-
-          if (channels.length === 0) {
-            channelList.innerHTML = '<div style="color:var(--text-muted); font-size:0.7rem; grid-column:1/-1;">No channels found</div>';
-          } else {
-            channels.forEach((ch, idx) => {
-              const chBtn = document.createElement('button');
-              chBtn.className = 'channel-item';
-              chBtn.textContent = ch.title || `Channel ${idx + 1}`;
-              chBtn.onclick = (e) => {
-                e.stopPropagation();
-                playLiveTvChannel(channels, idx, cat.label);
-              };
-              channelList.appendChild(chBtn);
-            });
-          }
-          subcategoriesGrid.appendChild(channelList);
-        }
-      });
-    }
-
-    // Play Selected Channel from Live TV Subcategory
-    function playLiveTvChannel(channelList, index, subcatLabel) {
-      if (playerPlaceholder) playerPlaceholder.style.display = 'none';
-
-      activeCategory = 'live_tv';
-      btnApnaTv.className = 'category-btn';
-      btnYouTube.className = 'category-btn';
-      btnLiveTv.className = 'category-btn active livetv';
-
-      currentPlaylist = channelList;
-      currentIndex = index;
-      isMuted = false;
-      updateMuteButtonUI();
-
-      if (syncTimer) clearInterval(syncTimer);
-
-      loadMedia(currentPlaylist[index], 0);
-      epgTickerText.textContent = `LIVE TV (${subcatLabel.toUpperCase()}): ${currentPlaylist[index].title}`;
-
-      // Collapse menu back after channel selection
-      closeSubcategoryMenu();
-    }
-
-    // Standard Category Switcher
-    function switchCategory(categoryKey) {
-      if (!rawPlaylists[categoryKey]) return;
-
-      closeSubcategoryMenu();
-
-      if (playerPlaceholder) playerPlaceholder.style.display = 'none';
-
-      activeCategory = categoryKey;
-      currentIndex = -1;
-
-      isMuted = (categoryKey !== 'youtube');
-      updateMuteButtonUI();
-
-      if (categoryKey === 'apna_tv') {
-        btnApnaTv.className = 'category-btn active';
-        btnYouTube.className = 'category-btn';
-        btnLiveTv.className = 'category-btn';
-      } else if (categoryKey === 'youtube') {
-        btnApnaTv.className = 'category-btn';
-        btnYouTube.className = 'category-btn youtube';
-        btnLiveTv.className = 'category-btn';
-      }
-
-      currentPlaylist = rawPlaylists[categoryKey];
-      videoDurations = currentPlaylist.map(item => item.duration_seconds || 60);
-      totalDuration = videoDurations.reduce((a, b) => a + b, 0);
-
-      if (syncTimer) clearInterval(syncTimer);
-      syncPlayback();
-      syncTimer = setInterval(syncPlayback, 1000);
-    }
-
-    function getPlaybackPosition() {
-      if (totalDuration === 0) return { index: 0, time: 0 };
-      const now = Math.floor(Date.now() / 1000) % totalDuration;
-      let offset = 0;
-      for (let i = 0; i < videoDurations.length; i++) {
-        if (now < offset + videoDurations[i]) {
-          return { index: i, time: now - offset };
-        }
-        offset += videoDurations[i];
-      }
-      return { index: 0, time: 0 };
-    }
-
-    // State tracking variables for forward-skip prevention
-let ytPlayer = null;
-let maxWatchedTime = 0;
-let ytCheckInterval = null;
-
-// Load YouTube API script once dynamically
-if (!window.YT) {
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
-function loadMedia(item, startTime) {
-  showSpinner();
-
-  // Reset tracking state
-  maxWatchedTime = 0;
-  if (ytCheckInterval) clearInterval(ytCheckInterval);
-
-  // Clean up previous HLS instance
-  if (hls) {
-    hls.stopLoad();
-    hls.detachMedia();
-    hls.destroy();
-    hls = null;
-  }
-
-  // Clean up previous YouTube player instance
-  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
-    ytPlayer.destroy();
-    ytPlayer = null;
-  }
-
-  container.innerHTML = '';
-
-  if (item.type === 'iframe') {
-    // Extract video ID from URL
-    const videoIdMatch = item.stream_url.match(/(?:embed\/|v=)([^&?]+)/);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
-
-    if (videoId) {
-      // Create a target div for YouTube API
-      const playerDiv = document.createElement('div');
-      playerDiv.id = 'ytApiPlayer';
-      container.appendChild(playerDiv);
-
-      // Initialize YouTube Player via API
-      ytPlayer = new YT.Player('ytApiPlayer', {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 1,       // Show controls so user can see scrub bar
-          modestbranding: 1,
-          rel: 0,
-          enablejsapi: 1,
-          mute: isMuted ? 1 : 0
-        },
-        events: {
-          onReady: (event) => {
-            hideSpinner();
-            event.target.playVideo();
-            startSkipPreventionMonitor();
-          },
-          onStateChange: (event) => {
-            // Unmute/Mute synchronization if needed
-            if (event.data === YT.PlayerState.PLAYING) {
-              hideSpinner();
-            }
-          }
-        }
-      });
-    } else {
-      // Fallback for non-YouTube embedded iframes
-      const iframe = document.createElement('iframe');
-      iframe.src = item.stream_url;
-      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-      iframe.onload = () => hideSpinner();
-      container.appendChild(iframe);
-    }
-
-  } else {
-    // Standard HTML5 / HLS Video Logic
-    const video = document.createElement('video');
-    video.autoplay = true;
-    video.muted = isMuted;
-    video.playsInline = true;
-    video.preload = 'auto';
-
-    video.addEventListener('playing', () => hideSpinner());
-    video.addEventListener('canplay', () => video.play().catch(() => {}));
-
-    container.appendChild(video);
-
-    // Skip prevention for standard HTML5/HLS videos
-    video.addEventListener('timeupdate', () => {
-      if (video.currentTime > maxWatchedTime + 2) {
-        // User skipped forward -> revert back
-        video.currentTime = maxWatchedTime;
-      } else {
-        // Normal playback -> continuously update maximum watched point
-        maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
-      }
-    });
-
-    if (item.stream_url.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-        hls.loadSource(item.stream_url);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.currentTime = startTime;
-          video.play().catch(() => {});
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = item.stream_url;
-        video.addEventListener('loadedmetadata', () => {
-          video.currentTime = startTime;
-          video.play().catch(() => {});
-        }, { once: true });
-      }
-    } else {
-      video.src = item.stream_url;
-      video.currentTime = startTime;
-      video.play().catch(() => {});
-    }
-  }
-}
-
-// Polling interval monitor to block skipping forward
+// ----------------------------------------
+// YouTube Forward-Skip Prevention Monitor
+// ----------------------------------------
 function startSkipPreventionMonitor() {
   ytCheckInterval = setInterval(() => {
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
       const currentTime = ytPlayer.getCurrentTime();
-
-      // Detect if user skipped forward by more than 2 seconds past max watched time
+      
+      // If user tries to scrub forward past maximum watched position
       if (currentTime > maxWatchedTime + 2) {
-        // Revert back to max watched timestamp
         ytPlayer.seekTo(maxWatchedTime, true);
       } else {
-        // Normal continuous playback: track furthest time reached
         maxWatchedTime = Math.max(maxWatchedTime, currentTime);
       }
     }
-  }, 250); // Checks 4 times per second
-               }
-
-    function updateEpgTicker(index) {
-      if (!currentPlaylist[index]) return;
-      const nowPlaying = currentPlaylist[index].title;
-      const nextIndex = (index + 1) % currentPlaylist.length;
-      const comingNext = currentPlaylist[nextIndex].title;
-      
-      epgTickerText.textContent = `NOW PLAYING: ${nowPlaying} — COMING NEXT: ${comingNext}`;
-    }
-
-    function syncPlayback() {
-      if (activeCategory === 'live_tv' || totalDuration === 0 || currentPlaylist.length === 0) return;
-      
-      const { index, time } = getPlaybackPosition();
-
-      if (index !== currentIndex) {
-        currentIndex = index;
-        loadMedia(currentPlaylist[index], time);
-        updateEpgTicker(index);
-        return;
-      }
-
-      const activeVideo = container.querySelector('video');
-      if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
-        activeVideo.currentTime = time;
-      }
-    }
-
-    loadData();
+  }, 500); // Polls twice per second for lightweight CPU usage
+}
+                            
   </script>
 </body>
 </html>
