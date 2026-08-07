@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
     <!-- Analytics -->
-    <script data-goatcounter="https://mstv.goatcounter.com/count" async src="https://gc.zgo.at/count"></script>
+    <script data-goatcounter="https://mstv.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 
     <style>
       :root {
@@ -639,9 +639,10 @@
       if (item.type === 'iframe') {
         let finalUrl = item.stream_url;
 
-        // Strip/append parameters to minimize popups & align mute status
+        // Apply YouTube embed parameters
         if (finalUrl.includes('youtube.com')) {
           const urlObj = new URL(finalUrl);
+          urlObj.searchParams.set('controls', '0'); // OPTION 1: Strips play controls & progress bar
           urlObj.searchParams.set('modestbranding', '1');
           urlObj.searchParams.set('rel', '0');
           urlObj.searchParams.set('iv_load_policy', '3');
@@ -659,7 +660,7 @@
         iframe.src = finalUrl;
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
         
-        // Strict anti-redirect sandbox (blocks new tabs/popups while keeping ad controls usable)
+        // Strict anti-redirect sandbox
         iframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-presentation";
 
         iframe.onload = () => {
