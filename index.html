@@ -26,7 +26,7 @@
             background-color: #000; position: relative;
         }
         .video-wrapper { width: 100%; max-width: 1000px; aspect-ratio: 16/9; background-color: black; }
-        #videoContainer { width: 100%; height: 100%; }
+        #videoContainer { width: 100%; height: 100%; position: relative; }
 
         /* EPG Scrolling Text Banner below container */
         .epg-ticker-container {
@@ -78,8 +78,8 @@
   <div class="video-stage-container">
     <div class="video-wrapper">
       <div id="videoContainer">
-        <video id="videoElement" autoplay playsinline controls style="width:100%; height:100%; display:none;"></video>
-        <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;"></iframe>
+        <video id="videoElement" autoplay playsinline controls style="width:100%; height:100%; display:none; object-fit:contain;"></video>
+        <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allowfullscreen></iframe>
       </div>
     </div>
   </div>
@@ -107,9 +107,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    // --- Core Playback Engine Variables & States ---
-    let channelsData = [];
-    let youtubeLiveList = [];
+    let rawAppData = {};
     let manualOverrideActive = false;
     let hls = null;
 
@@ -117,71 +115,103 @@
     const iframeElement = document.getElementById('iframeElement');
     const epgTickerText = document.getElementById('epgTickerText');
 
-    // --- Core Media Loader Engine ---
-    function loadMedia(url, type, index = 0, channelObj = null) {
+    // Safe media loader matching core engine architecture
+    function loadMedia(url, type, channelObj = null) {
       collapseAllDrawers();
-      
+
+      if (!url) {
+        console.warn("Attempted to load empty media URL");
+        return;
+      }
+
+      // Check if YouTube link needs formatting into embed format if raw watch URL is given
+      let targetUrl = url;
+      if (type === 'iframe' || url.includes('youtube.com') || url.includes('youtu.be')) {
+        type = 'iframe';
+        if (url.includes('watch?v=')) {
+          targetUrl = url.replace('watch?v=', 'embed/');
+        } else if (url.includes('youtu.be/')) {
+          targetUrl = url.replace('youtu.be/', 'www.youtube.com/embed/');
+        }
+      }
+
       if (type === 'iframe') {
         if (hls) { hls.destroy(); hls = null; }
         videoElement.pause();
+        videoElement.removeAttribute('src');
+        videoElement.load();
         videoElement.style.display = 'none';
+        
         iframeElement.style.display = 'block';
-        iframeElement.src = url;
+        iframeElement.src = targetUrl;
       } else {
         iframeElement.style.display = 'none';
         iframeElement.src = '';
         videoElement.style.display = 'block';
 
-        if (url.includes('.m3u8')) {
+        if (targetUrl.includes('.m3u8')) {
           if (Hls.isSupported()) {
             if (hls) { hls.destroy(); }
             hls = new Hls();
-            hls.loadSource(url);
+            hls.loadSource(targetUrl);
             hls.attachMedia(videoElement);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+              videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    hls.destroy();
+                    break;
+                }
+              }
             });
           } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-            videoElement.src = url;
+            videoElement.src = targetUrl;
             videoElement.addEventListener('loadedmetadata', () => {
-              videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+              videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
             });
           }
         } else {
           if (hls) { hls.destroy(); hls = null; }
-          videoElement.src = url;
-          videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+          videoElement.src = targetUrl;
+          videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
         }
       }
 
-      // Update EPG/Ticker info if channel object contains it
-      if (channelObj && channelObj.epg) {
-        epgTickerText.textContent = channelObj.epg;
+      if (channelObj && (channelObj.epg || channelObj.description)) {
+        epgTickerText.textContent = channelObj.epg || channelObj.description;
       }
     }
 
-    // --- Sync Playback (Default/Apna TV Handler) ---
     function syncPlayback() {
-      if (channelsData.length > 0 && !manualOverrideActive) {
-        loadMedia(channelsData[0].url, channelsData[0].type || 'video', 0, channelsData[0]);
+      if (!manualOverrideActive) {
+        const apnaSource = rawAppData.apnaTv || rawAppData.apnatv || rawAppData.channels;
+        if (Array.isArray(apnaSource) && apnaSource.length > 0) {
+          loadMedia(apnaSource[0].url, apnaSource[0].type || 'video', apnaSource[0]);
+        } else if (apnaSource && typeof apnaSource === 'object' && apnaSource.url) {
+          loadMedia(apnaSource.url, apnaSource.type || 'video', apnaSource);
+        }
       }
     }
 
-    // --- JSON Data Fetch Engine (Updated to test.json) ---
     async function fetchScheduleAndChannels() {
       try {
         const response = await fetch('test.json');
-        const data = await response.json();
-        
-        // Flexible data mapping to catch standard key configurations
-        channelsData = data.channels || data.apnaTv || data.apnatv || [];
-        youtubeLiveList = data.youtube || data.youtubelive || [];
+        rawAppData = await response.json();
 
         // Populate Live TV Drawer List dynamically
         const liveTvChannelsList = document.getElementById('liveTvChannelsList');
         liveTvChannelsList.innerHTML = '';
         
-        const liveTvArray = data.liveTv || data.livetv || [];
+        const liveTvArray = rawAppData.liveTv || rawAppData.livetv || [];
         if (Array.isArray(liveTvArray)) {
           liveTvArray.forEach((ch, idx) => {
             const btn = document.createElement('button');
@@ -190,18 +220,16 @@
             btn.innerHTML = `<i class="fa-solid fa-play"></i> ${ch.name || 'Channel ' + (idx + 1)}`;
             btn.onclick = () => {
               manualOverrideActive = true;
-              loadMedia(ch.url, ch.type || 'video', idx, ch);
+              loadMedia(ch.url, ch.type || 'video', ch);
             };
             liveTvChannelsList.appendChild(btn);
           });
         }
 
-        // Set initial schedule text ticker if available in test.json
-        if (data.epgTicker || data.epg) {
-          epgTickerText.textContent = data.epgTicker || data.epg;
+        if (rawAppData.epgTicker || rawAppData.epg) {
+          epgTickerText.textContent = rawAppData.epgTicker || rawAppData.epg;
         }
 
-        // Trigger default playback sync
         syncPlayback();
       } catch (error) {
         console.error("Error loading test.json feed:", error);
@@ -209,22 +237,23 @@
       }
     }
 
-    // --- Event Listeners Setup ---
+    // Category button direct action triggers
     document.getElementById('apnaDirectBtn').addEventListener('click', () => {
       collapseAllDrawers();
       manualOverrideActive = false;
-      if (channelsData.length > 0) {
-        loadMedia(channelsData[0].url, channelsData[0].type || 'video', 0, channelsData[0]);
-      }
+      syncPlayback();
     });
 
     document.getElementById('youtubeDirectBtn').addEventListener('click', () => {
       collapseAllDrawers();
-      if (youtubeLiveList.length > 0) {
-        manualOverrideActive = true;
-        loadMedia(youtubeLiveList[0].url, 'iframe', 0, youtubeLiveList[0]);
+      manualOverrideActive = true;
+      const ytSource = rawAppData.youtube || rawAppData.youtubelive;
+      if (Array.isArray(ytSource) && ytSource.length > 0) {
+        loadMedia(ytSource[0].url, 'iframe', ytSource[0]);
+      } else if (ytSource && ytSource.url) {
+        loadMedia(ytSource.url, 'iframe', ytSource);
       } else {
-        console.warn("No YouTube stream configured in test.json.");
+        console.warn("No valid YouTube stream found in test.json.");
       }
     });
 
@@ -238,7 +267,6 @@
       liveTvDrawer.classList.remove('open');
     }
 
-    // Initialize application on load
     window.addEventListener('DOMContentLoaded', () => {
       fetchScheduleAndChannels();
     });
