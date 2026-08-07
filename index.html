@@ -78,7 +78,7 @@
   <div class="video-stage-container">
     <div class="video-wrapper">
       <div id="videoContainer">
-        <video id="videoElement" autoplay playsinline style="width:100%; height:100%; display:none;"></video>
+        <video id="videoElement" autoplay playsinline controls style="width:100%; height:100%; display:none;"></video>
         <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;"></iframe>
       </div>
     </div>
@@ -107,16 +107,125 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    // --- Core Player Logics & Playback Engines Untouched ---
-    
+    // --- Core Playback Engine Variables & States ---
+    let channelsData = [];
+    let youtubeLiveList = [];
+    let manualOverrideActive = false;
+    let hls = null;
+
+    const videoElement = document.getElementById('videoElement');
+    const iframeElement = document.getElementById('iframeElement');
+    const epgTickerText = document.getElementById('epgTickerText');
+
+    // --- Core Media Loader Engine ---
+    function loadMedia(url, type, index = 0, channelObj = null) {
+      collapseAllDrawers();
+      
+      if (type === 'iframe') {
+        if (hls) { hls.destroy(); hls = null; }
+        videoElement.pause();
+        videoElement.style.display = 'none';
+        iframeElement.style.display = 'block';
+        iframeElement.src = url;
+      } else {
+        iframeElement.style.display = 'none';
+        iframeElement.src = '';
+        videoElement.style.display = 'block';
+
+        if (url.includes('.m3u8')) {
+          if (Hls.isSupported()) {
+            if (hls) { hls.destroy(); }
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(videoElement);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+            });
+          } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            videoElement.src = url;
+            videoElement.addEventListener('loadedmetadata', () => {
+              videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+            });
+          }
+        } else {
+          if (hls) { hls.destroy(); hls = null; }
+          videoElement.src = url;
+          videoElement.play().catch(e => console.log("Autoplay blocked:", e));
+        }
+      }
+
+      // Update EPG/Ticker info if channel object contains it
+      if (channelObj && channelObj.epg) {
+        epgTickerText.textContent = channelObj.epg;
+      }
+    }
+
+    // --- Sync Playback (Default/Apna TV Handler) ---
+    function syncPlayback() {
+      if (channelsData.length > 0 && !manualOverrideActive) {
+        loadMedia(channelsData[0].url, channelsData[0].type || 'video', 0, channelsData[0]);
+      }
+    }
+
+    // --- JSON Data Fetch Engine (Updated to test.json) ---
+    async function fetchScheduleAndChannels() {
+      try {
+        const response = await fetch('test.json');
+        const data = await response.json();
+        
+        // Flexible data mapping to catch standard key configurations
+        channelsData = data.channels || data.apnaTv || data.apnatv || [];
+        youtubeLiveList = data.youtube || data.youtubelive || [];
+
+        // Populate Live TV Drawer List dynamically
+        const liveTvChannelsList = document.getElementById('liveTvChannelsList');
+        liveTvChannelsList.innerHTML = '';
+        
+        const liveTvArray = data.liveTv || data.livetv || [];
+        if (Array.isArray(liveTvArray)) {
+          liveTvArray.forEach((ch, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'cat-btn';
+            btn.style.whiteSpace = 'nowrap';
+            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${ch.name || 'Channel ' + (idx + 1)}`;
+            btn.onclick = () => {
+              manualOverrideActive = true;
+              loadMedia(ch.url, ch.type || 'video', idx, ch);
+            };
+            liveTvChannelsList.appendChild(btn);
+          });
+        }
+
+        // Set initial schedule text ticker if available in test.json
+        if (data.epgTicker || data.epg) {
+          epgTickerText.textContent = data.epgTicker || data.epg;
+        }
+
+        // Trigger default playback sync
+        syncPlayback();
+      } catch (error) {
+        console.error("Error loading test.json feed:", error);
+        epgTickerText.textContent = "Error loading schedule data from test.json.";
+      }
+    }
+
+    // --- Event Listeners Setup ---
     document.getElementById('apnaDirectBtn').addEventListener('click', () => {
       collapseAllDrawers();
-      // Apna Tv direct logic remains preserved
+      manualOverrideActive = false;
+      if (channelsData.length > 0) {
+        loadMedia(channelsData[0].url, channelsData[0].type || 'video', 0, channelsData[0]);
+      }
     });
 
     document.getElementById('youtubeDirectBtn').addEventListener('click', () => {
       collapseAllDrawers();
-      // YouTube direct logic remains preserved
+      if (youtubeLiveList.length > 0) {
+        manualOverrideActive = true;
+        loadMedia(youtubeLiveList[0].url, 'iframe', 0, youtubeLiveList[0]);
+      } else {
+        console.warn("No YouTube stream configured in test.json.");
+      }
     });
 
     const liveTvBtn = document.getElementById('liveTvToggle');
@@ -129,13 +238,10 @@
       liveTvDrawer.classList.remove('open');
     }
 
-    // Function to update EPG ticker text from JSON feed data
-    function updateEpgTicker(text) {
-      const tickerElement = document.getElementById('epgTickerText');
-      if (tickerElement && text) {
-        tickerElement.textContent = text;
-      }
-    }
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchScheduleAndChannels();
+    });
   </script>
 </body>
 </html>
