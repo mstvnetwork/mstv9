@@ -158,10 +158,11 @@
         border: none;
       }
 
+      /* Transparent Shield Overlay to prevent clicking YouTube Logo/Links */
       .yt-shield-full {
         position: absolute;
         inset: 0;
-        z-index: 10;
+        z-index: 15;
         background: transparent;
         pointer-events: auto;
       }
@@ -847,15 +848,31 @@
           playerDiv.id = 'ytApiPlayer';
           container.appendChild(playerDiv);
 
+          // Add invisible click shield overlay over the YouTube frame
+          const shield = document.createElement('div');
+          shield.className = 'yt-shield-full';
+          shield.onclick = (e) => {
+            e.stopPropagation();
+            if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+              const state = ytPlayer.getPlayerState();
+              if (state === YT.PlayerState.PLAYING) {
+                ytPlayer.pauseVideo();
+              } else {
+                ytPlayer.playVideo();
+              }
+            }
+          };
+          container.appendChild(shield);
+
           ytPlayer = new YT.Player('ytApiPlayer', {
             height: '100%',
             width: '100%',
             videoId: videoId,
             playerVars: {
               autoplay: 1,
-              controls: 1,
-              modestbranding: 1,
-              rel: 0,
+              controls: 0,        // Hide native controls so shield works seamlessly
+              modestbranding: 1,  // Minimizes YouTube branding
+              rel: 0,             // Disables related videos from other channels
               enablejsapi: 1,
               mute: isMuted ? 1 : 0,
               start: Math.floor(startTime)
@@ -971,7 +988,6 @@
       }
 
       const activeVideo = container.querySelector('video');
-      // Only seek if video is ready, not seeking, not paused, and drift exceeds 6 seconds
       if (
         activeVideo && 
         !activeVideo.seeking && 
