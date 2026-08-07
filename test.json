@@ -1,26 +1,30 @@
 {
   "network": "MSTV Network",
-  "playlist": [
-    {
-      "id": 1,
-      "title": "Big Buck Bunny (MP4 Test)",
-      "type": "video",
-      "duration_seconds": 60,
-      "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-    },
-    {
-      "id": 2,
-      "title": "Embedded Stream (Iframe Sandbox Test)",
-      "type": "iframe",
-      "duration_seconds": 60,
-      "stream_url": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=0"
-    },
-    {
-      "id": 3,
-      "title": "Sintel HLS Stream",
-      "type": "video",
-      "duration_seconds": 60,
-      "stream_url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
-    }
-  ]
+  "playlists": {
+    "apna_tv": [
+      {
+        "id": 1,
+        "title": "Big Buck Bunny (MP4 Test)",
+        "type": "video",
+        "duration_seconds": 60,
+        "stream_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+      },
+      {
+        "id": 3,
+        "title": "Sintel HLS Stream",
+        "type": "video",
+        "duration_seconds": 60,
+        "stream_url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+      }
+    ],
+    "youtube": [
+      {
+        "id": 2,
+        "title": "Embedded Stream (Iframe Sandbox Test)",
+        "type": "iframe",
+        "duration_seconds": 60,
+        "stream_url": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&controls=0&enablejsapi=1"
+      }
+    ]
+  }
 }
