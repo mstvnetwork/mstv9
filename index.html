@@ -461,7 +461,7 @@
 
   </div>
 
-  <!-- HLS Library (Bundle version without source map warning) -->
+  <!-- HLS Library -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.js"></script>
 
   <script>
@@ -497,6 +497,12 @@
     setInterval(updateClock, 1000);
     updateClock();
 
+    function updateMuteButtonUI() {
+      muteToggle.innerHTML = isMuted 
+        ? '<i class="fa-solid fa-volume-xmark"></i>' 
+        : '<i class="fa-solid fa-volume-high"></i>';
+    }
+
     function showSpinner() {
       loadingSpinner.classList.add('active');
     }
@@ -508,7 +514,7 @@
     // Audio & Fullscreen Handlers
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
-      muteToggle.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+      updateMuteButtonUI();
       
       const activeVideo = container.querySelector('video');
       if (activeVideo) {
@@ -550,6 +556,14 @@
       activeCategory = categoryKey;
       currentIndex = -1;
 
+      // Set audio unmuted automatically when YouTube is selected
+      if (categoryKey === 'youtube') {
+        isMuted = false;
+      } else {
+        isMuted = true;
+      }
+      updateMuteButtonUI();
+
       // Update Tab Styles
       if (categoryKey === 'apna_tv') {
         btnApnaTv.className = 'category-btn active';
@@ -583,7 +597,7 @@
       return { index: 0, time: 0 };
     }
 
-    // Ultra-Fast Stream Engine Switcher
+    // Load Stream Source
     function loadMedia(item, startTime) {
       showSpinner();
 
@@ -599,7 +613,16 @@
 
       if (item.type === 'iframe') {
         const iframe = document.createElement('iframe');
-        iframe.src = item.stream_url;
+        
+        // Remove mute=1 parameter if unmuted is expected
+        let finalUrl = item.stream_url;
+        if (!isMuted) {
+          finalUrl = finalUrl.replace('mute=1', 'mute=0');
+        } else {
+          finalUrl = finalUrl.replace('mute=0', 'mute=1');
+        }
+
+        iframe.src = finalUrl;
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
         
         iframe.onload = () => {
