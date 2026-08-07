@@ -5,8 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="MSTV Network offers a variety of live TV channels including music, movies, and more. Watch your favorite channels online for free.">
+    <meta name="keywords" content="live TV, MSTV Network, free TV, live channels, streaming, music, bollywood, saga music">
     <meta name="robots" content="index, follow">
+    <meta property="og:title" content="MSTV Network">
+    <meta property="og:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
+    <meta property="og:url" content="https://mstvnet.netlify.app/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MSTV Network">
+    <meta name="twitter:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
+    <meta name="twitter:url" content="https://mstvnet.netlify.app/">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "MSTV Network",
+        "description": "Stream live TV channels including music, movies, and more.",
+        "url": "https://mstvnet.netlify.app",
+        "publisher": {
+            "@type": "Organization",
+            "name": "MSTV Network",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png"
+            }
+        }
+    }
+    </script>
+
+    <!-- GoatCounter script -->
+    <script data-goatcounter="https://mstv.goatcounter.com/count"
+            async src="https://gc.zgo.at/count.js"></script>
+
   <title>m3u8 player</title>
+
+  <!-- Font Awesome for social icon -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
   <style>
@@ -17,6 +52,7 @@
       margin: 0;
       padding: 0;
     }
+
     header {
       text-align: center;
       padding: 20px 10px;
@@ -25,13 +61,21 @@
       font-weight: bold;
       color: #FFD700;
     }
+
     .scrolling-text {
       overflow: hidden;
       white-space: nowrap;
       box-sizing: border-box;
     }
-    .top-scrolling-text { background-color: #222; }
-    .bottom-scrolling-text { background-color: #004080; }
+
+    .top-scrolling-text {
+      background-color: #222;
+    }
+
+    .bottom-scrolling-text {
+      background-color: #004080;
+    }
+
     .scrolling-text p {
       display: inline-block;
       padding-left: 100%;
@@ -39,18 +83,21 @@
       font-size: 1.2em;
       color: #fff;
     }
+
     @keyframes scroll-left {
       0% { transform: translateX(0); }
       100% { transform: translateX(-100%); }
     }
+
     .video-wrapper {
       position: relative;
       width: 90%;
       max-width: 1280px;
       margin: 30px auto;
-      padding-top: 56.25%;
+      padding-top: 56.25%; /* 16:9 aspect ratio */
       background-color: black;
     }
+
     #videoContainer {
       position: absolute;
       top: 0; left: 0;
@@ -58,53 +105,140 @@
       height: 100%;
       overflow: hidden;
     }
+
     #muteToggle {
       position: absolute;
-      top: 10px; right: 10px;
+      top: 10px;
+      right: 10px;
       background: rgba(0, 0, 0, 0.5);
-      color: white; font-size: 1.5em;
-      padding: 5px 10px; border-radius: 50%;
-      cursor: pointer; z-index: 10;
+      color: white;
+      font-size: 1.5em;
+      padding: 5px 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
     }
+
     #liveStamp {
       position: absolute;
-      top: 10px; left: 10px;
-      background-color: red; color: white;
-      font-weight: bold; padding: 5px 10px;
-      font-size: 0.9em; border-radius: 5px; z-index: 10;
+      top: 10px;
+      left: 10px;
+      background-color: red;
+      color: white;
+      font-weight: bold;
+      padding: 5px 10px;
+      font-size: 0.9em;
+      border-radius: 5px;
+      z-index: 10;
     }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .image-grid img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border: 2px solid #333;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .social {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .social a {
+      text-decoration: none;
+      color: #FFD700;
+      font-size: 1.2em;
+    }
+
+    .social i {
+      margin-right: 8px;
+      color: #1877f2;
+    }
+
     footer {
-      background-color: black; color: yellow;
-      padding: 20px 10px; text-align: center; font-size: 0.9em;
-      margin-top: 40px;
+      background-color: black;
+      color: yellow;
+      padding: 20px 10px;
+      text-align: center;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 768px) {
+      header { font-size: 1.8em; }
+      .scrolling-text p { font-size: 1em; }
     }
   </style>
 </head>
 <body>
 
+  <!-- Page Header -->
   <header>MSTV NETWORK</header>
 
+  <!-- Top Scrolling Text -->
   <div class="scrolling-text top-scrolling-text">
     <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
   </div>
 
+  <!-- Video / Embed Wrapper Section -->
   <div class="video-wrapper">
     <div id="videoContainer">
-      <!-- Permanent elements for engine toggling -->
-      <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; display:none;"></video>
-      <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+      <!-- Dynamic media target inserted here -->
     </div>
     <span id="muteToggle">🔈</span>
     <div id="liveStamp">LIVE</div>
   </div>
     
+  <!-- Bottom Scrolling Text (dynamic) -->
   <div class="scrolling-text bottom-scrolling-text">
     <p>Loading schedule...</p>
   </div>
+  
+   <!-- Social Links -->
+  <div class="social">
+    <a href="https://facebook.com" target="_blank">
+      <i class="fab fa-facebook"></i>Click to follow
+    </a>
+  </div>
+  <header>OUR PARTNERS</header>
+  
+ <!-- Image Grid -->
+  <div class="image-grid">
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.jpeg" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(1).jpeg" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.png" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(4).jpeg" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/live-sports-plus-hd-otk-logo.webp" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/81GCH6UU7qL.png" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(2).jpeg" />
+    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(1).png" />
+  </div>
 
-  <footer>
-    <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
-  </footer>
+ <footer>
+  <div class="footer-section">
+    <div class="footer-column">
+      <h2>About Us</h2>
+      <p>MSTV Network is a free streaming platform bringing you 24/7 access to music, movies, news, kids content, and more. We aim to deliver high-quality entertainment for audiences worldwide — no subscriptions, no hidden fees.</p>
+      <h3>⚠️ Disclaimer</h3>
+      <p>MSTV Network streams content freely available on public platforms. We do not host or claim ownership of any third-party media. All copyrights remain with their respective owners.</p>
+      <h4>📜 Terms of Service</h4>
+      <p>By using MSTV Network, you agree to view content solely for personal, non-commercial use. We are not responsible for third-party streams or their availability. Continued use constitutes acceptance of these terms.</p>
+    </div>
+    <div class="footer-column">
+      <h2>Contact</h2>
+      <p>Email: contact@mstvindia.com</p>
+      <p>Phone: +001-305-242-4447</p>
+    </div>
+  </div>
+  <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
+</footer>
 
   <!-- HLS.js -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -112,11 +246,6 @@
     const container = document.getElementById('videoContainer');
     const muteToggle = document.getElementById('muteToggle');
     const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
-
-    // Engine UI Nodes
-    const $videoEl = document.getElementById('videoElement');
-    const $iframeEl = document.getElementById('iframeElement');
-    const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
 
     let playlist = [];
     let titles = [];
@@ -127,37 +256,23 @@
     let hls = null;
     let currentIndex = -1;
     let isMuted = true;
-    let currentUrl = '';
-    let currentType = '';
-    let currentTimeOffset = 0;
 
     muteToggle.textContent = '🔈';
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       muteToggle.textContent = isMuted ? '🔈' : '🔊';
       
-      // Handle native video / HLS stream
-      $videoEl.muted = isMuted;
-      if (!$videoEl.paused) $videoEl.play().catch(() => {});
-
-      // Handle iframe player (Instant YouTube postMessage unmuting)
-      if (currentType === 'iframe' && currentUrl) {
-        if (currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('youtube-nocookie.com')) {
-          const command = isMuted ? '{"event":"command","func":"mute","args":""}' : '{"event":"command","func":"unMute","args":""}';
-          $iframeEl.contentWindow.postMessage(command, '*');
-        } else {
-          loadMedia(currentUrl, currentType, currentTimeOffset);
-        }
+      const activeVideo = container.querySelector('video');
+      if (activeVideo) {
+        activeVideo.muted = isMuted;
+        if (!activeVideo.paused) activeVideo.play().catch(() => {});
       }
     });
 
-    async function fetchSchedule(isInitial = false) {
+    async function initPlayer() {
       try {
-        const response = await fetch(`test.json?t=${Date.now()}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
+        const response = await fetch('test.json');
         const data = await response.json();
-        if (!data.playlist || data.playlist.length === 0) throw new Error('Playlist is empty');
         
         playlist = data.playlist.map(item => item.stream_url);
         titles = data.playlist.map(item => item.title);
@@ -165,17 +280,15 @@
         streamTypes = data.playlist.map(item => item.type || 'video');
         totalDuration = videoDurations.reduce((a, b) => a + b, 0);
 
-        if (isInitial) {
-          syncPlayback();
-          setInterval(syncPlayback, 1000);
-        }
+        syncPlayback();
+        setInterval(syncPlayback, 1000);
       } catch (error) {
-        console.error('Failed to fetch test.json:', error);
+        console.error('Failed to load test.json:', error);
+        bottomScrollText.textContent = 'Error loading schedule.';
       }
     }
 
     function getPlaybackPosition() {
-      if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
       let offset = 0;
       for (let i = 0; i < videoDurations.length; i++) {
@@ -187,110 +300,65 @@
       return { index: 0, time: 0 };
     }
 
-    function isDashStream(type, url) {
-      return type === 'dash' || url.includes('.mpd');
-    }
-
-    async function playDASH(url, startTime) {
-      $videoEl.src = url;
-      $videoEl.currentTime = startTime;
-      $videoEl.play().catch(() => {});
-    }
-
-    async function playHLS(url, startTime) {
+    function loadMedia(url, type, startTime) {
       if (hls) {
         hls.destroy();
         hls = null;
       }
 
-      if (url.includes('.m3u8')) {
-        if (Hls.isSupported()) {
-          hls = new Hls();
-          hls.loadSource(url);
-          hls.attachMedia($videoEl);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            $videoEl.currentTime = startTime;
-            $videoEl.play().catch(() => {});
-          });
-        } else if ($videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-          $videoEl.src = url;
-          $videoEl.addEventListener('loadedmetadata', () => {
-            $videoEl.currentTime = startTime;
-            $videoEl.play().catch(() => {});
-          }, { once: true });
-        }
-      } else {
-        $videoEl.src = url;
-        $videoEl.currentTime = startTime;
-        $videoEl.play().catch(() => {});
-      }
-    }
-
-    function showLoader(show) {
-      // Optional UI loader handler
-    }
-
-    function showError(message) {
-      console.error(message);
-    }
-
-    async function loadMedia(url, type, startTime, ch = {}) {
-      if (!url) return;
-      
-      currentUrl = url;
-      currentType = type;
-      currentTimeOffset = startTime;
-      $videoEl.muted = isMuted;
-
-      let streamUrl = url;
+      container.innerHTML = '';
 
       if (type === 'iframe') {
-        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
-          if (!streamUrl.includes('enablejsapi=1')) {
-            streamUrl += (streamUrl.includes('?') ? '&' : '?') + 'enablejsapi=1';
-          }
-          const muteVal = isMuted ? '1' : '0';
-          if (streamUrl.includes('mute=')) {
-            streamUrl = streamUrl.replace(/mute=[01]/, `mute=${muteVal}`);
-          } else {
-            streamUrl += `&mute=${muteVal}`;
-          }
-          if (!streamUrl.includes('autoplay=')) {
-            streamUrl += '&autoplay=1';
-          }
-        }
-
-        // Engine Code Block for Iframe
-        $videoEl.style.display = 'none';
-        $iframeEl.style.display = 'block';
-        if (ch.sandboxed !== false) $iframeEl.setAttribute('sandbox', SANDBOX_VALUE);
-        else $iframeEl.removeAttribute('sandbox');
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.pointerEvents = 'none';
+        iframe.sandbox = "allow-scripts allow-same-origin";
         
-        $iframeEl.src = streamUrl;
-        $iframeEl.onload = () => showLoader(false);
-        $iframeEl.onerror = () => showError('iFrame error');
-
-      } else if (isDashStream(type, streamUrl)) {
-        // Engine Code Block for DASH
-        $iframeEl.style.display = 'none';
-        $iframeEl.style.display = ''; // Clear iframe src to stop background audio leak
-        $iframeEl.src = '';
-        $videoEl.style.display = 'block';
-        
-        await playDASH(streamUrl, startTime);
+        container.appendChild(iframe);
       } else {
-        // Engine Code Block for HLS / Default
-        $iframeEl.style.display = 'none';
-        $iframeEl.src = ''; // Clear iframe src to stop background audio leak
-        $videoEl.style.display = 'block';
-        
-        await playHLS(streamUrl, startTime);
+        const video = document.createElement('video');
+        video.id = 'videoPlayer';
+        video.autoplay = true;
+        video.muted = isMuted;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.pointerEvents = 'none';
+        video.style.userSelect = 'none';
+
+        container.appendChild(video);
+
+        if (url.includes('.m3u8')) {
+          if (Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+              video.currentTime = startTime;
+              video.play().catch(() => {});
+            }, { once: true });
+          }
+        } else {
+          video.src = url;
+          video.currentTime = startTime;
+          video.play().catch(() => {});
+        }
       }
     }
 
     function updateBottomScrollText(index) {
-      const nowPlaying = titles[index] || "Unknown";
-      const comingNext = titles[(index + 1) % titles.length] || "Unknown";
+      const nowPlaying = titles[index];
+      const comingNext = titles[(index + 1) % titles.length];
       bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next: ${comingNext}`;
     }
 
@@ -305,19 +373,20 @@
         return;
       }
 
-      if ($videoEl.style.display === 'block' && Math.abs($videoEl.currentTime - time) > 3) {
-        $videoEl.currentTime = time;
+      const activeVideo = container.querySelector('video');
+      if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
+        activeVideo.currentTime = time;
       }
     }
 
-    async function initPlayer() {
-      await fetchSchedule(true);
-      setInterval(() => {
-        fetchSchedule(false);
-      }, 10000);
-    }
-
     initPlayer();
+  </script>
+
+  <!-- GoatCounter manual trigger -->
+  <script>
+    fetch("https://mstv.goatcounter.com/count?p=" + encodeURIComponent(location.pathname))
+      .then(() => console.log("GoatCounter manual ping sent"))
+      .catch((e) => console.warn("GoatCounter failed", e));
   </script>
 </body>
 </html>
