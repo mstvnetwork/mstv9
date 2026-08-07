@@ -578,9 +578,9 @@
 
   <!-- HLS Library -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.js"></script>
- <script>
-      // ==========================================
-// MSTV Player Script with Category & Playback Logic
+   <script>
+       // ==========================================
+// MSTV Player Master Script
 // ==========================================
 
 // Global state tracking variables
@@ -591,12 +591,37 @@ let hls = null;
 let currentData = null; // Holds parsed JSON playlist data
 
 // ----------------------------------------
-// 1. Global Category Switcher Fix
+// 1. Live TV Dropdown / Collapsible Handler
+// ----------------------------------------
+window.toggleLiveTvMenu = function(event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
+
+  // Finds your live tv dropdown or submenu container
+  const liveTvSubMenu = document.getElementById('liveTvSubMenu') || 
+                        document.querySelector('.live-tv-submenu') ||
+                        document.querySelector('.dropdown-container');
+
+  if (liveTvSubMenu) {
+    liveTvSubMenu.classList.toggle('active');
+    liveTvSubMenu.classList.toggle('show');
+
+    // Display toggle fallback
+    if (liveTvSubMenu.style.display === 'block') {
+      liveTvSubMenu.style.display = 'none';
+    } else {
+      liveTvSubMenu.style.display = 'block';
+    }
+  }
+};
+
+// ----------------------------------------
+// 2. Category Switcher Logic
 // ----------------------------------------
 window.switchCategory = function(categoryKey) {
   console.log('Switching category to:', categoryKey);
 
-  // Update active state on category buttons if present
   const buttons = document.querySelectorAll('.category-btn, .playlist-btn');
   buttons.forEach(btn => btn.classList.remove('active'));
   
@@ -606,7 +631,6 @@ window.switchCategory = function(categoryKey) {
 
   if (!currentData) return;
 
-  // Search playlists root or live_tv subcategories
   let itemsToRender = null;
 
   if (currentData.playlists && currentData.playlists[categoryKey]) {
@@ -616,26 +640,22 @@ window.switchCategory = function(categoryKey) {
   }
 
   if (itemsToRender && itemsToRender.length > 0) {
-    // Function that renders channel list in UI (if present in your code)
     if (typeof renderPlaylist === 'function') {
       renderPlaylist(itemsToRender);
     }
-    // Automatically start playing first video in chosen category
     loadMedia(itemsToRender[0], 0);
   }
 };
 
 // ----------------------------------------
-// 2. Memory & Player Teardown Cleanup
+// 3. Memory & Player Teardown Cleanup
 // ----------------------------------------
 function cleanupPlayers() {
-  // Clear active YouTube monitoring timer
   if (ytCheckInterval) {
     clearInterval(ytCheckInterval);
     ytCheckInterval = null;
   }
 
-  // Clean up HLS instance safely
   if (hls) {
     try {
       hls.stopLoad();
@@ -647,7 +667,6 @@ function cleanupPlayers() {
     hls = null;
   }
 
-  // Clean up YouTube player instance safely
   if (ytPlayer) {
     if (typeof ytPlayer.destroy === 'function') {
       try {
@@ -661,15 +680,13 @@ function cleanupPlayers() {
 }
 
 // ----------------------------------------
-// 3. Main Media Loader
+// 4. Main Media Loader
 // ----------------------------------------
 function loadMedia(item, startTime = 0) {
   if (typeof showSpinner === 'function') showSpinner();
   
-  // Clear running instances
   cleanupPlayers();
   
-  // Sync watch tracking point to initial start position
   maxWatchedTime = startTime;
   
   const container = document.getElementById('playerContainer') || document.querySelector('.player-container');
@@ -711,7 +728,6 @@ function loadMedia(item, startTime = 0) {
         }
       });
     } else {
-      // Direct iframe fallback
       const iframe = document.createElement('iframe');
       iframe.src = item.stream_url;
       iframe.allow = "autoplay; encrypted-media; picture-in-picture";
@@ -727,38 +743,32 @@ function loadMedia(item, startTime = 0) {
     video.playsInline = true;
     video.preload = 'auto';
 
-    // Gate to prevent skip enforcement during initial buffering/seeking
     let isInitialLoading = true;
 
     video.addEventListener('playing', () => {
       if (typeof hideSpinner === 'function') hideSpinner();
-      // Enable skip-prevention 500ms after playback smooths out
       setTimeout(() => { isInitialLoading = false; }, 500);
     });
 
     if (container) container.appendChild(video);
 
-    // Skip prevention logic for HTML5/HLS streams
     video.addEventListener('timeupdate', () => {
       if (isInitialLoading || video.seeking || video.paused) return;
 
       if (video.currentTime > maxWatchedTime + 2) {
-        // Revert back if user skips forward past watched point
         video.currentTime = maxWatchedTime;
       } else {
-        // Smoothly advance maximum watched position
         maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
       }
     });
 
-    // Handle HLS streams
     if (item.stream_url.includes('.m3u8')) {
       if (typeof Hls !== 'undefined' && Hls.isSupported()) {
         hls = new Hls({ 
           enableWorker: true, 
-          lowLatencyMode: false,          // Off to prevent stuttering on cold start
-          capLevelToPlayerSize: true,     // Match stream resolution to player size
-          startLevel: -1,                  // Auto adaptive bitrate selection
+          lowLatencyMode: false,
+          capLevelToPlayerSize: true,
+          startLevel: -1,
           maxBufferLength: 30,
           backBufferLength: 15
         });
@@ -767,13 +777,10 @@ function loadMedia(item, startTime = 0) {
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          if (startTime > 0) {
-            video.currentTime = startTime;
-          }
+          if (startTime > 0) video.currentTime = startTime;
           video.play().catch(() => {});
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native Safari/iOS HLS support
         video.src = item.stream_url;
         video.addEventListener('loadedmetadata', () => {
           if (startTime > 0) video.currentTime = startTime;
@@ -781,7 +788,6 @@ function loadMedia(item, startTime = 0) {
         }, { once: true });
       }
     } else {
-      // Standard MP4 stream handling
       video.src = item.stream_url;
       if (startTime > 0) video.currentTime = startTime;
       video.play().catch(() => {});
@@ -790,22 +796,20 @@ function loadMedia(item, startTime = 0) {
 }
 
 // ----------------------------------------
-// 4. YouTube Forward-Skip Prevention Monitor
+// 5. YouTube Forward-Skip Prevention Monitor
 // ----------------------------------------
 function startSkipPreventionMonitor() {
   ytCheckInterval = setInterval(() => {
     if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
       const currentTime = ytPlayer.getCurrentTime();
-      
-      // If user tries to scrub forward past maximum watched position
       if (currentTime > maxWatchedTime + 2) {
         ytPlayer.seekTo(maxWatchedTime, true);
       } else {
         maxWatchedTime = Math.max(maxWatchedTime, currentTime);
       }
     }
-  }, 500); // Polls twice per second for lightweight CPU usage
-}                      
+  }, 500);
+               }
   </script>
 </body>
 </html>
