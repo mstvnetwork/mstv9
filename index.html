@@ -18,13 +18,12 @@
     <style>
       :root {
         --bg-main: #0a0c10;
-        --card-bg: rgba(22, 27, 34, 0.75);
+        --card-bg: rgba(22, 27, 34, 0.85);
         --accent-gold: #ffd700;
         --accent-red: #ff3b30;
-        --accent-blue: #007aff;
         --text-primary: #ffffff;
         --text-muted: #8b949e;
-        --border-color: rgba(255, 255, 255, 0.1);
+        --border-color: rgba(255, 255, 255, 0.12);
       }
 
       * {
@@ -36,52 +35,44 @@
       html, body {
         width: 100%;
         height: 100%;
-        overflow: hidden; /* Strict single screen fit */
+        overflow: hidden; /* Strict viewport fit */
         background-color: var(--bg-main);
         color: var(--text-primary);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
-      /* Main Page Grid Layout */
+      /* Single-Page Layout Frame */
       .app-layout {
         display: flex;
         flex-direction: column;
         height: 100vh;
         width: 100vw;
-        max-width: 1400px;
+        max-width: 1280px;
         margin: 0 auto;
-        padding: 0.75rem;
-        gap: 0.75rem;
+        padding: 0.5rem;
+        gap: 0.5rem;
       }
 
-      /* Sleek Modern Header */
+      /* Modern Compact Header */
       header.app-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         background: var(--card-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        padding: 0.4rem 1rem;
         flex-shrink: 0;
       }
 
       .brand-box {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-      }
-
-      .brand-logo {
-        height: 32px;
-        width: auto;
-        border-radius: 6px;
+        gap: 0.5rem;
       }
 
       .brand-title {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         font-weight: 800;
         letter-spacing: 0.5px;
         background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 100%);
@@ -92,23 +83,22 @@
       .header-right {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        font-size: 0.85rem;
+        gap: 0.75rem;
+        font-size: 0.8rem;
         color: var(--text-muted);
       }
 
       .live-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         background: rgba(255, 59, 48, 0.15);
         color: var(--accent-red);
         border: 1px solid rgba(255, 59, 48, 0.3);
-        padding: 3px 8px;
-        border-radius: 20px;
-        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 0.7rem;
         font-weight: 700;
-        text-transform: uppercase;
       }
 
       .live-dot {
@@ -125,25 +115,27 @@
         100% { opacity: 1; transform: scale(1); }
       }
 
-      /* Media Player Container */
+      /* Strictly Aspect 16:9 Media Player Container */
       .player-section {
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 0; /* Prevents flex box overflow */
+        min-height: 0;
+        width: 100%;
       }
 
       .video-wrapper {
         position: relative;
-        width: 100%;
-        height: 100%;
+        /* Responsive 16:9 bounded strictly within remaining height */
+        width: min(100%, calc((100vh - 180px) * (16 / 9)));
+        aspect-ratio: 16 / 9;
         max-height: 100%;
         background-color: #000;
-        border-radius: 12px;
+        border-radius: 8px;
         overflow: hidden;
         border: 1px solid var(--border-color);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       }
 
       #videoContainer {
@@ -160,34 +152,66 @@
         border: none;
       }
 
-      /* Player Overlays & Controls */
+      /* Placeholder Overlay on First Visit */
+      .player-placeholder {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle, #1a202c 0%, #0a0c10 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        z-index: 10;
+        text-align: center;
+        padding: 1rem;
+      }
+
+      .placeholder-icon {
+        font-size: 3rem;
+        color: var(--accent-gold);
+        opacity: 0.8;
+      }
+
+      .placeholder-text {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .placeholder-subtext {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      /* Controls Overlay */
       .player-controls-overlay {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: 10px;
+        right: 10px;
         display: flex;
-        gap: 8px;
+        gap: 6px;
         z-index: 15;
       }
 
       .control-btn {
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.15);
-        width: 38px;
-        height: 38px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         transition: all 0.2s ease;
       }
 
       .control-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.25);
         transform: scale(1.05);
       }
 
@@ -201,11 +225,11 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
         z-index: 12;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.2s ease;
       }
 
       .loading-spinner-overlay.active {
@@ -214,12 +238,12 @@
       }
 
       .spinner {
-        width: 44px;
-        height: 44px;
-        border: 3.5px solid rgba(255, 255, 255, 0.1);
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
         border-top-color: var(--accent-gold);
         border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        animation: spin 0.7s linear infinite;
       }
 
       @keyframes spin {
@@ -227,19 +251,18 @@
       }
 
       .spinner-text {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--text-muted);
-        letter-spacing: 0.5px;
       }
 
-      /* Real-time EPG Ticker */
+      /* Real-Time EPG Ticker */
       .epg-ticker-bar {
         display: flex;
         align-items: center;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        height: 36px;
+        border-radius: 6px;
+        height: 32px;
         overflow: hidden;
         flex-shrink: 0;
       }
@@ -248,12 +271,11 @@
         background: var(--accent-gold);
         color: #000;
         font-weight: 700;
-        font-size: 0.75rem;
-        padding: 0 12px;
+        font-size: 0.7rem;
+        padding: 0 10px;
         height: 100%;
         display: flex;
         align-items: center;
-        letter-spacing: 0.5px;
         flex-shrink: 0;
       }
 
@@ -267,8 +289,8 @@
       .ticker-content {
         display: inline-block;
         padding-left: 100%;
-        animation: ticker-scroll 22s linear infinite;
-        font-size: 0.85rem;
+        animation: ticker-scroll 20s linear infinite;
+        font-size: 0.8rem;
         color: var(--text-primary);
       }
 
@@ -287,38 +309,32 @@
 
       .category-btn {
         flex: 1;
-        max-width: 220px;
-        padding: 10px 16px;
+        max-width: 200px;
+        padding: 8px 12px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         color: var(--text-muted);
-        border-radius: 8px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        transition: all 0.25s ease;
-      }
-
-      .category-btn i {
-        font-size: 1rem;
+        gap: 6px;
+        transition: all 0.2s ease;
       }
 
       .category-btn.active {
-        background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 100%);
         border-color: var(--accent-gold);
         color: var(--accent-gold);
-        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.1);
       }
 
       .category-btn.active.youtube {
-        background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 59, 48, 0.05) 100%);
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.2) 0%, rgba(255, 59, 48, 0.05) 100%);
         border-color: var(--accent-red);
         color: var(--accent-red);
-        box-shadow: 0 2px 10px rgba(255, 59, 48, 0.1);
       }
 
       /* Compact Footer */
@@ -328,60 +344,36 @@
         justify-content: space-between;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        font-size: 0.75rem;
+        border-radius: 6px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
         color: var(--text-muted);
         flex-shrink: 0;
       }
 
       .footer-links {
         display: flex;
-        gap: 1rem;
+        gap: 0.8rem;
       }
 
       .footer-links a {
         color: var(--text-muted);
         text-decoration: none;
-        transition: color 0.2s ease;
       }
 
       .footer-links a:hover {
         color: var(--accent-gold);
       }
 
-      /* Responsive Rules for Small Devices */
       @media (max-width: 600px) {
         .app-layout {
-          padding: 0.4rem;
-          gap: 0.4rem;
-        }
-
-        header.app-header {
-          padding: 0.5rem 0.75rem;
-        }
-
-        .brand-title {
-          font-size: 1rem;
-        }
-
-        .epg-ticker-bar {
-          height: 32px;
-        }
-
-        .epg-label {
-          font-size: 0.65rem;
-          padding: 0 8px;
-        }
-
-        .category-btn {
-          font-size: 0.8rem;
-          padding: 8px 12px;
+          padding: 0.3rem;
+          gap: 0.3rem;
         }
 
         footer.app-footer {
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
           text-align: center;
         }
       }
@@ -394,7 +386,7 @@
     <!-- Header -->
     <header class="app-header">
       <div class="brand-box">
-        <img src="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png" alt="MSTV Logo" class="brand-logo" onerror="this.style.display='none'">
+        <i class="fa-solid fa-satellite-dish" style="color: var(--accent-gold);"></i>
         <span class="brand-title">MSTV NETWORK</span>
       </div>
       <div class="header-right">
@@ -405,13 +397,21 @@
       </div>
     </header>
 
-    <!-- Media Player Workspace -->
+    <!-- 16:9 Media Player Container -->
     <main class="player-section">
       <div class="video-wrapper" id="playerWrapper">
         
+        <!-- Video / Iframe Viewport -->
         <div id="videoContainer"></div>
 
-        <!-- Sleek Custom Controls -->
+        <!-- Initial Visit Placeholder Overlay -->
+        <div class="player-placeholder" id="playerPlaceholder">
+          <i class="fa-solid fa-circle-play placeholder-icon"></i>
+          <div class="placeholder-text">Welcome to MSTV Live Network</div>
+          <div class="placeholder-subtext">Select a channel below to begin playback</div>
+        </div>
+
+        <!-- Custom Controls -->
         <div class="player-controls-overlay">
           <button class="control-btn" id="muteToggle" title="Toggle Mute">
             <i class="fa-solid fa-volume-xmark"></i>
@@ -421,32 +421,32 @@
           </button>
         </div>
 
-        <!-- Modern Loading Spinner -->
+        <!-- Modern Spinner -->
         <div class="loading-spinner-overlay" id="loadingSpinner">
           <div class="spinner"></div>
-          <span class="spinner-text">Connecting to Live Stream...</span>
+          <span class="spinner-text">Loading Stream...</span>
         </div>
 
       </div>
     </main>
 
-    <!-- Realtime EPG Scroll Ticker -->
+    <!-- EPG Ticker -->
     <div class="epg-ticker-bar">
-      <div class="epg-label"><i class="fa-solid fa-tv" style="margin-right: 5px;"></i> EPG LIVE</div>
+      <div class="epg-label"><i class="fa-solid fa-tv" style="margin-right: 4px;"></i> EPG</div>
       <div class="ticker-wrapper">
         <div class="ticker-content" id="epgTickerText">
-          Initializing stream timetable...
+          Please select a playlist category to view current broadcast schedule.
         </div>
       </div>
     </div>
 
     <!-- Category Tabs -->
     <nav class="category-container">
-      <button class="category-btn active" id="btnApnaTv" onclick="switchCategory('apna_tv')">
+      <button class="category-btn" id="btnApnaTv" onclick="switchCategory('apna_tv')">
         <i class="fa-solid fa-play"></i> Apna TV
       </button>
       <button class="category-btn" id="btnYouTube" onclick="switchCategory('youtube')">
-        <i class="fa-solid fa-brands fa-youtube"></i> YouTube
+        <i class="fa-brands fa-youtube"></i> YouTube
       </button>
     </nav>
 
@@ -461,13 +461,14 @@
 
   </div>
 
-  <!-- HLS Library -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <!-- HLS Library (Bundle version without source map warning) -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.js"></script>
 
   <script>
     // DOM Elements
     const container = document.getElementById('videoContainer');
     const playerWrapper = document.getElementById('playerWrapper');
+    const playerPlaceholder = document.getElementById('playerPlaceholder');
     const muteToggle = document.getElementById('muteToggle');
     const fullscreenToggle = document.getElementById('fullscreenToggle');
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -478,7 +479,7 @@
 
     // State Variables
     let rawPlaylists = {};
-    let activeCategory = 'apna_tv';
+    let activeCategory = null;
     let currentPlaylist = [];
     let videoDurations = [];
     let totalDuration = 0;
@@ -496,7 +497,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Show/Hide Spinner
     function showSpinner() {
       loadingSpinner.classList.add('active');
     }
@@ -519,7 +519,7 @@
     fullscreenToggle.addEventListener('click', () => {
       if (!document.fullscreenElement) {
         playerWrapper.requestFullscreen().catch(err => {
-          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+          console.error(`Fullscreen error: ${err.message}`);
         });
       } else {
         document.exitFullscreen();
@@ -528,17 +528,13 @@
 
     // Fetch JSON Data
     async function loadData() {
-      showSpinner();
       try {
         const response = await fetch('test.json');
         const data = await response.json();
-        
         rawPlaylists = data.playlists || {};
-        switchCategory('apna_tv');
       } catch (error) {
         console.error('Failed to load test.json:', error);
-        epgTickerText.textContent = 'Error loading EPG timetable schedule.';
-        hideSpinner();
+        epgTickerText.textContent = 'Error loading timetable data.';
       }
     }
 
@@ -546,10 +542,15 @@
     function switchCategory(categoryKey) {
       if (!rawPlaylists[categoryKey]) return;
 
+      // Dismiss initial placeholder
+      if (playerPlaceholder) {
+        playerPlaceholder.style.display = 'none';
+      }
+
       activeCategory = categoryKey;
       currentIndex = -1;
 
-      // Update Tab Visuals
+      // Update Tab Styles
       if (categoryKey === 'apna_tv') {
         btnApnaTv.className = 'category-btn active';
         btnYouTube.className = 'category-btn';
@@ -558,18 +559,17 @@
         btnYouTube.className = 'category-btn youtube';
       }
 
-      // Populate Active Playlist Data
       currentPlaylist = rawPlaylists[categoryKey];
       videoDurations = currentPlaylist.map(item => item.duration_seconds || 60);
       totalDuration = videoDurations.reduce((a, b) => a + b, 0);
 
-      // Start Sync Loop
+      // Reset Sync Loop
       if (syncTimer) clearInterval(syncTimer);
       syncPlayback();
       syncTimer = setInterval(syncPlayback, 1000);
     }
 
-    // Calculate synchronized position
+    // Position sync
     function getPlaybackPosition() {
       if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
@@ -583,11 +583,14 @@
       return { index: 0, time: 0 };
     }
 
-    // Load Stream Source
+    // Ultra-Fast Stream Engine Switcher
     function loadMedia(item, startTime) {
       showSpinner();
 
+      // Explicitly detach and destroy active HLS instance
       if (hls) {
+        hls.stopLoad();
+        hls.detachMedia();
         hls.destroy();
         hls = null;
       }
@@ -598,7 +601,6 @@
         const iframe = document.createElement('iframe');
         iframe.src = item.stream_url;
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-        iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
         
         iframe.onload = () => {
           hideSpinner();
@@ -610,16 +612,19 @@
         video.autoplay = true;
         video.muted = isMuted;
         video.playsInline = true;
+        video.preload = 'auto';
 
-        // Hide spinner on playback start
+        // Immediate play triggering listeners
         video.addEventListener('playing', () => hideSpinner());
-        video.addEventListener('waiting', () => showSpinner());
+        video.addEventListener('canplay', () => {
+          video.play().catch(() => {});
+        });
 
         container.appendChild(video);
 
         if (item.stream_url.includes('.m3u8')) {
           if (Hls.isSupported()) {
-            hls = new Hls();
+            hls = new Hls({ enableWorker: true, lowLatencyMode: true });
             hls.loadSource(item.stream_url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -641,7 +646,7 @@
       }
     }
 
-    // Dynamic EPG Marquee Update
+    // Dynamic EPG Marquee
     function updateEpgTicker(index) {
       if (!currentPlaylist[index]) return;
       const nowPlaying = currentPlaylist[index].title;
@@ -664,14 +669,13 @@
         return;
       }
 
-      // Keep Native Video Element synced
       const activeVideo = container.querySelector('video');
       if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
         activeVideo.currentTime = time;
       }
     }
 
-    // Initialize application
+    // Load data on page init
     loadData();
   </script>
 </body>
