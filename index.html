@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Updated viewport settings for modern browsers -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="description" content="MSTV Network offers 24/7 live TV streams, music, and movies.">
@@ -22,11 +21,10 @@
         --card-bg: rgba(22, 27, 34, 0.85);
         --accent-gold: #ffd700;
         --accent-red: #ff3b30;
+        --accent-blue: #007aff;
         --text-primary: #ffffff;
         --text-muted: #8b949e;
         --border-color: rgba(255, 255, 255, 0.12);
-        
-        /* Dynamic viewport height fallback for mobile browsers */
         --app-height: 100vh; 
       }
 
@@ -40,13 +38,12 @@
         width: 100%;
         height: 100%;
         height: var(--app-height);
-        overflow: hidden; /* Strict no-scroll constraint */
+        overflow: hidden;
         background-color: var(--bg-main);
         color: var(--text-primary);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
-      /* Single-Page Layout Frame */
       .app-layout {
         display: flex;
         flex-direction: column;
@@ -55,9 +52,9 @@
         width: 100%;
         max-width: 1280px;
         margin: 0 auto;
-        /* Handle iOS notch/home indicator safe areas */
         padding: calc(0.4rem + env(safe-area-inset-top)) calc(0.4rem + env(safe-area-inset-right)) calc(0.4rem + env(safe-area-inset-bottom)) calc(0.4rem + env(safe-area-inset-left));
         gap: 0.4rem;
+        position: relative;
       }
 
       /* Compact Header */
@@ -122,20 +119,19 @@
         100% { opacity: 1; transform: scale(1); }
       }
 
-      /* Dynamically Contained Player Section */
+      /* Player Section */
       .player-section {
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 0; /* Critical flex overflow prevention */
+        min-height: 0;
         width: 100%;
         position: relative;
       }
 
       .video-wrapper {
         position: relative;
-        /* Dynamic 16:9 box model that scales down automatically within flex boundaries */
         width: 100%;
         height: 100%;
         max-width: calc(100vh * (16 / 9));
@@ -162,7 +158,6 @@
         border: none;
       }
 
-      /* Full Viewport Shield */
       .yt-shield-full {
         position: absolute;
         inset: 0;
@@ -171,7 +166,6 @@
         pointer-events: auto;
       }
 
-      /* Placeholder Overlay */
       .player-placeholder {
         position: absolute;
         inset: 0;
@@ -203,7 +197,6 @@
         color: var(--text-muted);
       }
 
-      /* Controls Overlay */
       .player-controls-overlay {
         position: absolute;
         top: 8px;
@@ -234,7 +227,6 @@
         transform: scale(1.05);
       }
 
-      /* Loading Spinner */
       .loading-spinner-overlay {
         position: absolute;
         inset: 0;
@@ -274,7 +266,7 @@
         color: var(--text-muted);
       }
 
-      /* Real-Time EPG Ticker */
+      /* EPG Ticker */
       .epg-ticker-bar {
         display: flex;
         align-items: center;
@@ -318,30 +310,35 @@
         100% { transform: translateX(-100%); }
       }
 
-      /* Category Switcher Tabs */
+      /* Category Switcher Container */
+      .category-wrapper {
+        position: relative;
+        flex-shrink: 0;
+        width: 100%;
+        z-index: 40;
+      }
+
       .category-container {
         display: flex;
         justify-content: center;
-        gap: 8px;
-        flex-shrink: 0;
+        gap: 6px;
         width: 100%;
       }
 
       .category-btn {
         flex: 1;
-        max-width: 180px;
-        padding: 6px 10px;
+        padding: 6px 8px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         color: var(--text-muted);
         border-radius: 6px;
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 5px;
         transition: all 0.2s ease;
       }
 
@@ -357,7 +354,101 @@
         color: var(--accent-red);
       }
 
-      /* Compact Footer */
+      .category-btn.active.livetv {
+        background: linear-gradient(135deg, rgba(0, 122, 255, 0.25) 0%, rgba(0, 122, 255, 0.05) 100%);
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+      }
+
+      /* Transparent Collapsible Subcategories Overlay */
+      .subcategories-menu {
+        display: none;
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        margin-bottom: 6px;
+        background: rgba(10, 12, 16, 0.92);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.7);
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .subcategories-menu.active {
+        display: block;
+      }
+
+      .subcategories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 6px;
+      }
+
+      .subcat-btn {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        padding: 6px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+      }
+
+      .subcat-btn:hover, .subcat-btn.active {
+        background: rgba(0, 122, 255, 0.2);
+        border-color: var(--accent-blue);
+        color: #fff;
+      }
+
+      /* Collapsible Channel List */
+      .channels-list {
+        display: none;
+        grid-column: 1 / -1;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 6px;
+        padding: 6px;
+        gap: 4px;
+        margin-top: 4px;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+
+      .channels-list.active {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      }
+
+      .channel-item {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        text-align: left;
+      }
+
+      .channel-item:hover {
+        background: var(--accent-gold);
+        color: #000;
+        font-weight: 700;
+      }
+
+      /* Footer */
       footer.app-footer {
         display: flex;
         align-items: center;
@@ -385,30 +476,13 @@
         color: var(--accent-gold);
       }
 
-      /* Mobile Landscape Adaptability */
       @media (max-height: 500px) {
-        .app-header, footer.app-footer {
-          padding: 0.2rem 0.5rem;
-        }
-        .brand-title {
-          font-size: 0.85rem;
-        }
-        .placeholder-icon {
-          font-size: 1.5rem;
-        }
-        .placeholder-text {
-          font-size: 0.8rem;
-        }
-        .category-btn {
-          padding: 4px 8px;
-          font-size: 0.75rem;
-        }
-      }
-
-      @media (max-width: 480px) {
-        footer.app-footer {
-          font-size: 0.6rem;
-        }
+        .app-header, footer.app-footer { padding: 0.2rem 0.5rem; }
+        .brand-title { font-size: 0.85rem; }
+        .placeholder-icon { font-size: 1.5rem; }
+        .placeholder-text { font-size: 0.8rem; }
+        .category-btn { padding: 4px 6px; font-size: 0.72rem; }
+        .subcategories-menu { max-height: 150px; }
       }
     </style>
 </head>
@@ -433,18 +507,14 @@
     <!-- 16:9 Media Player Container -->
     <main class="player-section">
       <div class="video-wrapper" id="playerWrapper">
-        
-        <!-- Video / Iframe Viewport -->
         <div id="videoContainer"></div>
 
-        <!-- Initial Visit Placeholder Overlay -->
         <div class="player-placeholder" id="playerPlaceholder">
           <i class="fa-solid fa-circle-play placeholder-icon"></i>
           <div class="placeholder-text">Welcome to MSTV Live Network</div>
-          <div class="placeholder-subtext">Select a channel below to begin playback</div>
+          <div class="placeholder-subtext">Select a category below to begin playback</div>
         </div>
 
-        <!-- Custom Controls -->
         <div class="player-controls-overlay">
           <button class="control-btn" id="muteToggle" title="Toggle Mute">
             <i class="fa-solid fa-volume-xmark"></i>
@@ -454,12 +524,10 @@
           </button>
         </div>
 
-        <!-- Modern Spinner -->
         <div class="loading-spinner-overlay" id="loadingSpinner">
           <div class="spinner"></div>
           <span class="spinner-text">Loading Stream...</span>
         </div>
-
       </div>
     </main>
 
@@ -473,15 +541,27 @@
       </div>
     </div>
 
-    <!-- Category Tabs -->
-    <nav class="category-container">
-      <button class="category-btn" id="btnApnaTv" onclick="switchCategory('apna_tv')">
-        <i class="fa-solid fa-play"></i> Apna TV
-      </button>
-      <button class="category-btn" id="btnYouTube" onclick="switchCategory('youtube')">
-        <i class="fa-brands fa-youtube"></i> YouTube
-      </button>
-    </nav>
+    <!-- Category Tabs & Subcategories Wrapper -->
+    <div class="category-wrapper">
+      
+      <!-- Transparent Collapsible Subcategories Menu -->
+      <div class="subcategories-menu" id="subcategoriesMenu">
+        <div class="subcategories-grid" id="subcategoriesGrid"></div>
+      </div>
+
+      <!-- Main Category Tabs -->
+      <nav class="category-container">
+        <button class="category-btn" id="btnApnaTv" onclick="switchCategory('apna_tv')">
+          <i class="fa-solid fa-play"></i> Apna TV
+        </button>
+        <button class="category-btn" id="btnYouTube" onclick="switchCategory('youtube')">
+          <i class="fa-brands fa-youtube"></i> YouTube
+        </button>
+        <button class="category-btn" id="btnLiveTv" onclick="toggleLiveTvMenu()">
+          <i class="fa-solid fa-tv"></i> Live TV
+        </button>
+      </nav>
+    </div>
 
     <!-- Footer -->
     <footer class="app-footer">
@@ -498,7 +578,6 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.js"></script>
 
   <script>
-    // Fix for Mobile Viewport Height (iOS Safari / Chrome Android Navigation Bar issue)
     function setAppHeight() {
       const doc = document.documentElement;
       doc.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -517,10 +596,24 @@
     const epgTickerText = document.getElementById('epgTickerText');
     const btnApnaTv = document.getElementById('btnApnaTv');
     const btnYouTube = document.getElementById('btnYouTube');
+    const btnLiveTv = document.getElementById('btnLiveTv');
+    const subcategoriesMenu = document.getElementById('subcategoriesMenu');
+    const subcategoriesGrid = document.getElementById('subcategoriesGrid');
     const currentTimeEl = document.getElementById('currentTime');
+
+    // Live TV Subcategory Definitions (Icons and Labels)
+    const liveTvCategories = [
+      { key: 'sports', label: 'Sports', icon: 'fa-basketball' },
+      { key: 'music', label: 'Music', icon: 'fa-music' },
+      { key: 'news', label: 'News', icon: 'fa-newspaper' },
+      { key: 'devotional', label: 'Devotional', icon: 'fa-om' },
+      { key: 'android_pc', label: 'Android/PC', icon: 'fa-mobile-screen-button' },
+      { key: 'entertainment', label: 'Entertainment', icon: 'fa-film' }
+    ];
 
     // State Variables
     let rawPlaylists = {};
+    let liveTvData = {};
     let activeCategory = null;
     let currentPlaylist = [];
     let videoDurations = [];
@@ -530,8 +623,8 @@
     let currentIndex = -1;
     let isMuted = true;
     let syncTimer = null;
+    let activeSubcatKey = null;
 
-    // Clock display
     function updateClock() {
       const now = new Date();
       currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -545,30 +638,19 @@
         : '<i class="fa-solid fa-volume-high"></i>';
     }
 
-    function showSpinner() {
-      loadingSpinner.classList.add('active');
-    }
+    function showSpinner() { loadingSpinner.classList.add('active'); }
+    function hideSpinner() { loadingSpinner.classList.remove('active'); }
 
-    function hideSpinner() {
-      loadingSpinner.classList.remove('active');
-    }
-
-    // Audio & Fullscreen Handlers
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
       updateMuteButtonUI();
-      
       const activeVideo = container.querySelector('video');
-      if (activeVideo) {
-        activeVideo.muted = isMuted;
-      }
+      if (activeVideo) activeVideo.muted = isMuted;
     });
 
     fullscreenToggle.addEventListener('click', () => {
       if (!document.fullscreenElement) {
-        playerWrapper.requestFullscreen().catch(err => {
-          console.error(`Fullscreen error: ${err.message}`);
-        });
+        playerWrapper.requestFullscreen().catch(err => console.error(err));
       } else {
         document.exitFullscreen();
       }
@@ -580,52 +662,137 @@
         const response = await fetch('test.json');
         const data = await response.json();
         rawPlaylists = data.playlists || {};
+        liveTvData = data.live_tv || {};
+        renderLiveTvSubcategories();
       } catch (error) {
         console.error('Failed to load test.json:', error);
         epgTickerText.textContent = 'Error loading timetable data.';
       }
     }
 
-    // Category Switching Handler
+    // Toggle Live TV Collapsible Subcategories Menu
+    function toggleLiveTvMenu() {
+      const isOpen = subcategoriesMenu.classList.contains('active');
+      if (isOpen) {
+        closeSubcategoryMenu();
+      } else {
+        subcategoriesMenu.classList.add('active');
+        btnLiveTv.className = 'category-btn active livetv';
+      }
+    }
+
+    function closeSubcategoryMenu() {
+      subcategoriesMenu.classList.remove('active');
+      activeSubcatKey = null;
+      renderLiveTvSubcategories();
+      if (activeCategory !== 'live_tv') {
+        btnLiveTv.className = 'category-btn';
+      }
+    }
+
+    // Render Subcategory Buttons & Embedded Collapsible Channels List
+    function renderLiveTvSubcategories() {
+      subcategoriesGrid.innerHTML = '';
+
+      liveTvCategories.forEach(cat => {
+        const channels = liveTvData[cat.key] || [];
+
+        const subcatBtn = document.createElement('button');
+        subcatBtn.className = `subcat-btn ${activeSubcatKey === cat.key ? 'active' : ''}`;
+        subcatBtn.innerHTML = `<span><i class="fa-solid ${cat.icon}" style="margin-right:4px;"></i>${cat.label}</span> <i class="fa-solid ${activeSubcatKey === cat.key ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>`;
+        
+        subcatBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (activeSubcatKey === cat.key) {
+            activeSubcatKey = null;
+          } else {
+            activeSubcatKey = cat.key;
+          }
+          renderLiveTvSubcategories();
+        };
+
+        subcategoriesGrid.appendChild(subcatBtn);
+
+        // If this subcategory is expanded, append its channel list inline
+        if (activeSubcatKey === cat.key) {
+          const channelList = document.createElement('div');
+          channelList.className = 'channels-list active';
+
+          if (channels.length === 0) {
+            channelList.innerHTML = '<div style="color:var(--text-muted); font-size:0.7rem; grid-column:1/-1;">No channels found</div>';
+          } else {
+            channels.forEach((ch, idx) => {
+              const chBtn = document.createElement('button');
+              chBtn.className = 'channel-item';
+              chBtn.textContent = ch.title || `Channel ${idx + 1}`;
+              chBtn.onclick = (e) => {
+                e.stopPropagation();
+                playLiveTvChannel(channels, idx, cat.label);
+              };
+              channelList.appendChild(chBtn);
+            });
+          }
+          subcategoriesGrid.appendChild(channelList);
+        }
+      });
+    }
+
+    // Play Selected Channel from Live TV Subcategory
+    function playLiveTvChannel(channelList, index, subcatLabel) {
+      if (playerPlaceholder) playerPlaceholder.style.display = 'none';
+
+      activeCategory = 'live_tv';
+      btnApnaTv.className = 'category-btn';
+      btnYouTube.className = 'category-btn';
+      btnLiveTv.className = 'category-btn active livetv';
+
+      currentPlaylist = channelList;
+      currentIndex = index;
+      isMuted = false;
+      updateMuteButtonUI();
+
+      if (syncTimer) clearInterval(syncTimer);
+
+      loadMedia(currentPlaylist[index], 0);
+      epgTickerText.textContent = `LIVE TV (${subcatLabel.toUpperCase()}): ${currentPlaylist[index].title}`;
+
+      // Collapse menu back after channel selection
+      closeSubcategoryMenu();
+    }
+
+    // Standard Category Switcher
     function switchCategory(categoryKey) {
       if (!rawPlaylists[categoryKey]) return;
 
-      // Dismiss initial placeholder
-      if (playerPlaceholder) {
-        playerPlaceholder.style.display = 'none';
-      }
+      closeSubcategoryMenu();
+
+      if (playerPlaceholder) playerPlaceholder.style.display = 'none';
 
       activeCategory = categoryKey;
       currentIndex = -1;
 
-      // Set audio unmuted automatically when YouTube is selected
-      if (categoryKey === 'youtube') {
-        isMuted = false;
-      } else {
-        isMuted = true;
-      }
+      isMuted = (categoryKey !== 'youtube');
       updateMuteButtonUI();
 
-      // Update Tab Styles
       if (categoryKey === 'apna_tv') {
         btnApnaTv.className = 'category-btn active';
         btnYouTube.className = 'category-btn';
-      } else {
+        btnLiveTv.className = 'category-btn';
+      } else if (categoryKey === 'youtube') {
         btnApnaTv.className = 'category-btn';
         btnYouTube.className = 'category-btn youtube';
+        btnLiveTv.className = 'category-btn';
       }
 
       currentPlaylist = rawPlaylists[categoryKey];
       videoDurations = currentPlaylist.map(item => item.duration_seconds || 60);
       totalDuration = videoDurations.reduce((a, b) => a + b, 0);
 
-      // Reset Sync Loop
       if (syncTimer) clearInterval(syncTimer);
       syncPlayback();
       syncTimer = setInterval(syncPlayback, 1000);
     }
 
-    // Position sync
     function getPlaybackPosition() {
       if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
@@ -639,11 +806,9 @@
       return { index: 0, time: 0 };
     }
 
-    // Load Stream Source
     function loadMedia(item, startTime) {
       showSpinner();
 
-      // Explicitly detach and destroy active HLS instance
       if (hls) {
         hls.stopLoad();
         hls.detachMedia();
@@ -656,7 +821,6 @@
       if (item.type === 'iframe') {
         let finalUrl = item.stream_url;
 
-        // Apply YouTube embed parameters
         if (finalUrl.includes('youtube.com')) {
           const urlObj = new URL(finalUrl);
           urlObj.searchParams.set('controls', '0');       
@@ -664,12 +828,7 @@
           urlObj.searchParams.set('rel', '0');            
           urlObj.searchParams.set('iv_load_policy', '3'); 
           urlObj.searchParams.set('enablejsapi', '1');
-          
-          if (!isMuted) {
-            urlObj.searchParams.set('mute', '0');
-          } else {
-            urlObj.searchParams.set('mute', '1');
-          }
+          urlObj.searchParams.set('mute', isMuted ? '1' : '0');
           finalUrl = urlObj.toString();
         }
 
@@ -677,10 +836,7 @@
         iframe.src = finalUrl;
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
         iframe.sandbox = "allow-scripts allow-same-origin allow-forms allow-presentation";
-
-        iframe.onload = () => {
-          hideSpinner();
-        };
+        iframe.onload = () => hideSpinner();
 
         container.appendChild(iframe);
 
@@ -696,9 +852,7 @@
         video.preload = 'auto';
 
         video.addEventListener('playing', () => hideSpinner());
-        video.addEventListener('canplay', () => {
-          video.play().catch(() => {});
-        });
+        video.addEventListener('canplay', () => video.play().catch(() => {}));
 
         container.appendChild(video);
 
@@ -726,7 +880,6 @@
       }
     }
 
-    // Dynamic EPG Marquee
     function updateEpgTicker(index) {
       if (!currentPlaylist[index]) return;
       const nowPlaying = currentPlaylist[index].title;
@@ -736,9 +889,8 @@
       epgTickerText.textContent = `NOW PLAYING: ${nowPlaying} — COMING NEXT: ${comingNext}`;
     }
 
-    // Sync loop monitor
     function syncPlayback() {
-      if (totalDuration === 0 || currentPlaylist.length === 0) return;
+      if (activeCategory === 'live_tv' || totalDuration === 0 || currentPlaylist.length === 0) return;
       
       const { index, time } = getPlaybackPosition();
 
@@ -755,7 +907,6 @@
       }
     }
 
-    // Load data on page init
     loadData();
   </script>
 </body>
