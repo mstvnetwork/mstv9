@@ -4,291 +4,574 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="description" content="MSTV Network offers a variety of live TV channels including music, movies, and more. Watch your favorite channels online for free.">
-    <meta name="keywords" content="live TV, MSTV Network, free TV, live channels, streaming, music, bollywood, saga music">
+    <meta name="description" content="MSTV Network offers 24/7 live TV streams, music, and movies.">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="MSTV Network">
-    <meta property="og:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
-    <meta property="og:url" content="https://mstvnet.netlify.app/">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="MSTV Network">
-    <meta name="twitter:description" content="Stream live TV channels including music, movies, and more on MSTV Network.">
-    <meta name="twitter:image" content="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png">
-    <meta name="twitter:url" content="https://mstvnet.netlify.app/">
 
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        "name": "MSTV Network",
-        "description": "Stream live TV channels including music, movies, and more.",
-        "url": "https://mstvnet.netlify.app",
-        "publisher": {
-            "@type": "Organization",
-            "name": "MSTV Network",
-            "logo": {
-                "@type": "ImageObject",
-                "url": "https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png"
-            }
+    <title>MSTV Network - Live Player</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+    <!-- Analytics -->
+    <script data-goatcounter="https://mstv.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+
+    <style>
+      :root {
+        --bg-main: #0a0c10;
+        --card-bg: rgba(22, 27, 34, 0.75);
+        --accent-gold: #ffd700;
+        --accent-red: #ff3b30;
+        --accent-blue: #007aff;
+        --text-primary: #ffffff;
+        --text-muted: #8b949e;
+        --border-color: rgba(255, 255, 255, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Strict single screen fit */
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+
+      /* Main Page Grid Layout */
+      .app-layout {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100vw;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0.75rem;
+        gap: 0.75rem;
+      }
+
+      /* Sleek Modern Header */
+      header.app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.6rem 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .brand-box {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .brand-logo {
+        height: 32px;
+        width: auto;
+        border-radius: 6px;
+      }
+
+      .brand-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 59, 48, 0.15);
+        color: var(--accent-red);
+        border: 1px solid rgba(255, 59, 48, 0.3);
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        background-color: var(--accent-red);
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+
+      /* Media Player Container */
+      .player-section {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0; /* Prevents flex box overflow */
+      }
+
+      .video-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        background-color: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      }
+
+      #videoContainer {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      #videoContainer video, 
+      #videoContainer iframe {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border: none;
+      }
+
+      /* Player Overlays & Controls */
+      .player-controls-overlay {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 8px;
+        z-index: 15;
+      }
+
+      .control-btn {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+
+      .control-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+      }
+
+      /* Modern Loading Spinner */
+      .loading-spinner-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 12, 16, 0.85);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        z-index: 12;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .loading-spinner-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .spinner {
+        width: 44px;
+        height: 44px;
+        border: 3.5px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--accent-gold);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .spinner-text {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+      }
+
+      /* Real-time EPG Ticker */
+      .epg-ticker-bar {
+        display: flex;
+        align-items: center;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        height: 36px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .epg-label {
+        background: var(--accent-gold);
+        color: #000;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0 12px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+      }
+
+      .ticker-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        white-space: nowrap;
+      }
+
+      .ticker-content {
+        display: inline-block;
+        padding-left: 100%;
+        animation: ticker-scroll 22s linear infinite;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+      }
+
+      @keyframes ticker-scroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+      }
+
+      /* Category Switcher Tabs */
+      .category-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      .category-btn {
+        flex: 1;
+        max-width: 220px;
+        padding: 10px 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+      }
+
+      .category-btn i {
+        font-size: 1rem;
+      }
+
+      .category-btn.active {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+        border-color: var(--accent-gold);
+        color: var(--accent-gold);
+        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.1);
+      }
+
+      .category-btn.active.youtube {
+        background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 59, 48, 0.05) 100%);
+        border-color: var(--accent-red);
+        color: var(--accent-red);
+        box-shadow: 0 2px 10px rgba(255, 59, 48, 0.1);
+      }
+
+      /* Compact Footer */
+      footer.app-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .footer-links {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .footer-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .footer-links a:hover {
+        color: var(--accent-gold);
+      }
+
+      /* Responsive Rules for Small Devices */
+      @media (max-width: 600px) {
+        .app-layout {
+          padding: 0.4rem;
+          gap: 0.4rem;
         }
-    }
-    </script>
 
-    <!-- GoatCounter script -->
-    <script data-goatcounter="https://mstv.goatcounter.com/count"
-            async src="https://gc.zgo.at/count.js"></script>
+        header.app-header {
+          padding: 0.5rem 0.75rem;
+        }
 
-  <title>m3u8 player</title>
+        .brand-title {
+          font-size: 1rem;
+        }
 
-  <!-- Font Awesome for social icon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+        .epg-ticker-bar {
+          height: 32px;
+        }
 
-  <style>
-    body {
-      background-color: #1a1a1a;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+        .epg-label {
+          font-size: 0.65rem;
+          padding: 0 8px;
+        }
 
-    header {
-      text-align: center;
-      padding: 20px 10px;
-      background-color: #000;
-      font-size: 2.5em;
-      font-weight: bold;
-      color: #FFD700;
-    }
+        .category-btn {
+          font-size: 0.8rem;
+          padding: 8px 12px;
+        }
 
-    .scrolling-text {
-      overflow: hidden;
-      white-space: nowrap;
-      box-sizing: border-box;
-    }
-
-    .top-scrolling-text {
-      background-color: #222;
-    }
-
-    .bottom-scrolling-text {
-      background-color: #004080;
-    }
-
-    .scrolling-text p {
-      display: inline-block;
-      padding-left: 100%;
-      animation: scroll-left 15s linear infinite;
-      font-size: 1.2em;
-      color: #fff;
-    }
-
-    @keyframes scroll-left {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
-    }
-
-    .video-wrapper {
-      position: relative;
-      width: 90%;
-      max-width: 1280px;
-      margin: 30px auto;
-      padding-top: 56.25%; /* 16:9 aspect ratio */
-      background-color: black;
-    }
-
-    #videoContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    #muteToggle {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      font-size: 1.5em;
-      padding: 5px 10px;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 10;
-    }
-
-    #liveStamp {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background-color: red;
-      color: white;
-      font-weight: bold;
-      padding: 5px 10px;
-      font-size: 0.9em;
-      border-radius: 5px;
-      z-index: 10;
-    }
-
-    .image-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-      padding: 20px;
-    }
-
-    .image-grid img {
-      width: 100%;
-      height: 100px;
-      object-fit: cover;
-      border: 2px solid #333;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    }
-
-    .social {
-      text-align: center;
-      margin: 30px 0;
-    }
-
-    .social a {
-      text-decoration: none;
-      color: #FFD700;
-      font-size: 1.2em;
-    }
-
-    .social i {
-      margin-right: 8px;
-      color: #1877f2;
-    }
-
-    footer {
-      background-color: black;
-      color: yellow;
-      padding: 20px 10px;
-      text-align: center;
-      font-size: 0.9em;
-    }
-
-    @media (max-width: 768px) {
-      header { font-size: 1.8em; }
-      .scrolling-text p { font-size: 1em; }
-    }
-  </style>
+        footer.app-footer {
+          flex-direction: column;
+          gap: 4px;
+          text-align: center;
+        }
+      }
+    </style>
 </head>
 <body>
 
-  <!-- Page Header -->
-  <header>MSTV NETWORK</header>
-
-  <!-- Top Scrolling Text -->
-  <div class="scrolling-text top-scrolling-text">
-    <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
-  </div>
-
-  <!-- Video / Embed Wrapper Section -->
-  <div class="video-wrapper">
-    <div id="videoContainer">
-      <!-- Dynamic media target inserted here -->
-    </div>
-    <span id="muteToggle">🔈</span>
-    <div id="liveStamp">LIVE</div>
-  </div>
+  <div class="app-layout">
     
-  <!-- Bottom Scrolling Text (dynamic) -->
-  <div class="scrolling-text bottom-scrolling-text">
-    <p>Loading schedule...</p>
-  </div>
-  
-   <!-- Social Links -->
-  <div class="social">
-    <a href="https://facebook.com" target="_blank">
-      <i class="fab fa-facebook"></i>Click to follow
-    </a>
-  </div>
-  <header>OUR PARTNERS</header>
-  
- <!-- Image Grid -->
-  <div class="image-grid">
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(1).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images.png" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(4).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/live-sports-plus-hd-otk-logo.webp" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/81GCH6UU7qL.png" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/download%20(2).jpeg" />
-    <img src="https://raw.githubusercontent.com/mstvnetwork/mstv1/main/images%20(1).png" />
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-box">
+        <img src="https://raw.githubusercontent.com/mstvnetwork/mstv2/refs/heads/main/Design-Studio-2025-01-20%20(2).png" alt="MSTV Logo" class="brand-logo" onerror="this.style.display='none'">
+        <span class="brand-title">MSTV NETWORK</span>
+      </div>
+      <div class="header-right">
+        <div class="live-badge">
+          <span class="live-dot"></span> LIVE
+        </div>
+        <span id="currentTime">00:00</span>
+      </div>
+    </header>
+
+    <!-- Media Player Workspace -->
+    <main class="player-section">
+      <div class="video-wrapper" id="playerWrapper">
+        
+        <div id="videoContainer"></div>
+
+        <!-- Sleek Custom Controls -->
+        <div class="player-controls-overlay">
+          <button class="control-btn" id="muteToggle" title="Toggle Mute">
+            <i class="fa-solid fa-volume-xmark"></i>
+          </button>
+          <button class="control-btn" id="fullscreenToggle" title="Toggle Fullscreen">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+        </div>
+
+        <!-- Modern Loading Spinner -->
+        <div class="loading-spinner-overlay" id="loadingSpinner">
+          <div class="spinner"></div>
+          <span class="spinner-text">Connecting to Live Stream...</span>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Realtime EPG Scroll Ticker -->
+    <div class="epg-ticker-bar">
+      <div class="epg-label"><i class="fa-solid fa-tv" style="margin-right: 5px;"></i> EPG LIVE</div>
+      <div class="ticker-wrapper">
+        <div class="ticker-content" id="epgTickerText">
+          Initializing stream timetable...
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <nav class="category-container">
+      <button class="category-btn active" id="btnApnaTv" onclick="switchCategory('apna_tv')">
+        <i class="fa-solid fa-play"></i> Apna TV
+      </button>
+      <button class="category-btn" id="btnYouTube" onclick="switchCategory('youtube')">
+        <i class="fa-solid fa-brands fa-youtube"></i> YouTube
+      </button>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>© 2026 MSTV INDIA. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="#" onclick="alert('MSTV Network streams public streams without hosting content directly.')">Disclaimer</a>
+        <a href="mailto:contact@mstvindia.com">Contact</a>
+      </div>
+    </footer>
+
   </div>
 
- <footer>
-  <div class="footer-section">
-    <div class="footer-column">
-      <h2>About Us</h2>
-      <p>MSTV Network is a free streaming platform bringing you 24/7 access to music, movies, news, kids content, and more. We aim to deliver high-quality entertainment for audiences worldwide — no subscriptions, no hidden fees.</p>
-      <h3>⚠️ Disclaimer</h3>
-      <p>MSTV Network streams content freely available on public platforms. We do not host or claim ownership of any third-party media. All copyrights remain with their respective owners.</p>
-      <h4>📜 Terms of Service</h4>
-      <p>By using MSTV Network, you agree to view content solely for personal, non-commercial use. We are not responsible for third-party streams or their availability. Continued use constitutes acceptance of these terms.</p>
-    </div>
-    <div class="footer-column">
-      <h2>Contact</h2>
-      <p>Email: contact@mstvindia.com</p>
-      <p>Phone: +001-305-242-4447</p>
-    </div>
-  </div>
-  <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
-</footer>
-
-  <!-- HLS.js -->
+  <!-- HLS Library -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script>
-    const container = document.getElementById('videoContainer');
-    const muteToggle = document.getElementById('muteToggle');
-    const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
 
-    let playlist = [];
-    let titles = [];
+  <script>
+    // DOM Elements
+    const container = document.getElementById('videoContainer');
+    const playerWrapper = document.getElementById('playerWrapper');
+    const muteToggle = document.getElementById('muteToggle');
+    const fullscreenToggle = document.getElementById('fullscreenToggle');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const epgTickerText = document.getElementById('epgTickerText');
+    const btnApnaTv = document.getElementById('btnApnaTv');
+    const btnYouTube = document.getElementById('btnYouTube');
+    const currentTimeEl = document.getElementById('currentTime');
+
+    // State Variables
+    let rawPlaylists = {};
+    let activeCategory = 'apna_tv';
+    let currentPlaylist = [];
     let videoDurations = [];
-    let streamTypes = [];
     let totalDuration = 0;
     
     let hls = null;
     let currentIndex = -1;
     let isMuted = true;
+    let syncTimer = null;
 
-    muteToggle.textContent = '🔈';
+    // Clock display
+    function updateClock() {
+      const now = new Date();
+      currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Show/Hide Spinner
+    function showSpinner() {
+      loadingSpinner.classList.add('active');
+    }
+
+    function hideSpinner() {
+      loadingSpinner.classList.remove('active');
+    }
+
+    // Audio & Fullscreen Handlers
     muteToggle.addEventListener('click', () => {
       isMuted = !isMuted;
-      muteToggle.textContent = isMuted ? '🔈' : '🔊';
+      muteToggle.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
       
       const activeVideo = container.querySelector('video');
       if (activeVideo) {
         activeVideo.muted = isMuted;
-        if (!activeVideo.paused) activeVideo.play().catch(() => {});
       }
     });
 
-    async function initPlayer() {
+    fullscreenToggle.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        playerWrapper.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Fetch JSON Data
+    async function loadData() {
+      showSpinner();
       try {
         const response = await fetch('test.json');
         const data = await response.json();
         
-        playlist = data.playlist.map(item => item.stream_url);
-        titles = data.playlist.map(item => item.title);
-        videoDurations = data.playlist.map(item => item.duration_seconds);
-        streamTypes = data.playlist.map(item => item.type || 'video');
-        totalDuration = videoDurations.reduce((a, b) => a + b, 0);
-
-        syncPlayback();
-        setInterval(syncPlayback, 1000);
+        rawPlaylists = data.playlists || {};
+        switchCategory('apna_tv');
       } catch (error) {
         console.error('Failed to load test.json:', error);
-        bottomScrollText.textContent = 'Error loading schedule.';
+        epgTickerText.textContent = 'Error loading EPG timetable schedule.';
+        hideSpinner();
       }
     }
 
+    // Category Switching Handler
+    function switchCategory(categoryKey) {
+      if (!rawPlaylists[categoryKey]) return;
+
+      activeCategory = categoryKey;
+      currentIndex = -1;
+
+      // Update Tab Visuals
+      if (categoryKey === 'apna_tv') {
+        btnApnaTv.className = 'category-btn active';
+        btnYouTube.className = 'category-btn';
+      } else {
+        btnApnaTv.className = 'category-btn';
+        btnYouTube.className = 'category-btn youtube';
+      }
+
+      // Populate Active Playlist Data
+      currentPlaylist = rawPlaylists[categoryKey];
+      videoDurations = currentPlaylist.map(item => item.duration_seconds || 60);
+      totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+
+      // Start Sync Loop
+      if (syncTimer) clearInterval(syncTimer);
+      syncPlayback();
+      syncTimer = setInterval(syncPlayback, 1000);
+    }
+
+    // Calculate synchronized position
     function getPlaybackPosition() {
+      if (totalDuration === 0) return { index: 0, time: 0 };
       const now = Math.floor(Date.now() / 1000) % totalDuration;
       let offset = 0;
       for (let i = 0; i < videoDurations.length; i++) {
@@ -300,7 +583,10 @@
       return { index: 0, time: 0 };
     }
 
-    function loadMedia(url, type, startTime) {
+    // Load Stream Source
+    function loadMedia(item, startTime) {
+      showSpinner();
+
       if (hls) {
         hls.destroy();
         hls = null;
@@ -308,85 +594,85 @@
 
       container.innerHTML = '';
 
-      if (type === 'iframe') {
+      if (item.type === 'iframe') {
         const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.pointerEvents = 'none';
-        iframe.sandbox = "allow-scripts allow-same-origin";
+        iframe.src = item.stream_url;
+        iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+        iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
         
+        iframe.onload = () => {
+          hideSpinner();
+        };
+
         container.appendChild(iframe);
       } else {
         const video = document.createElement('video');
-        video.id = 'videoPlayer';
         video.autoplay = true;
         video.muted = isMuted;
         video.playsInline = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'cover';
-        video.style.pointerEvents = 'none';
-        video.style.userSelect = 'none';
+
+        // Hide spinner on playback start
+        video.addEventListener('playing', () => hideSpinner());
+        video.addEventListener('waiting', () => showSpinner());
 
         container.appendChild(video);
 
-        if (url.includes('.m3u8')) {
+        if (item.stream_url.includes('.m3u8')) {
           if (Hls.isSupported()) {
             hls = new Hls();
-            hls.loadSource(url);
+            hls.loadSource(item.stream_url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               video.currentTime = startTime;
               video.play().catch(() => {});
             });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
+            video.src = item.stream_url;
             video.addEventListener('loadedmetadata', () => {
               video.currentTime = startTime;
               video.play().catch(() => {});
             }, { once: true });
           }
         } else {
-          video.src = url;
+          video.src = item.stream_url;
           video.currentTime = startTime;
           video.play().catch(() => {});
         }
       }
     }
 
-    function updateBottomScrollText(index) {
-      const nowPlaying = titles[index];
-      const comingNext = titles[(index + 1) % titles.length];
-      bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next: ${comingNext}`;
+    // Dynamic EPG Marquee Update
+    function updateEpgTicker(index) {
+      if (!currentPlaylist[index]) return;
+      const nowPlaying = currentPlaylist[index].title;
+      const nextIndex = (index + 1) % currentPlaylist.length;
+      const comingNext = currentPlaylist[nextIndex].title;
+      
+      epgTickerText.textContent = `NOW PLAYING: ${nowPlaying} — COMING NEXT: ${comingNext}`;
     }
 
+    // Sync loop monitor
     function syncPlayback() {
-      if (totalDuration === 0) return;
+      if (totalDuration === 0 || currentPlaylist.length === 0) return;
+      
       const { index, time } = getPlaybackPosition();
 
       if (index !== currentIndex) {
         currentIndex = index;
-        loadMedia(playlist[index], streamTypes[index], time);
-        updateBottomScrollText(index);
+        loadMedia(currentPlaylist[index], time);
+        updateEpgTicker(index);
         return;
       }
 
+      // Keep Native Video Element synced
       const activeVideo = container.querySelector('video');
       if (activeVideo && Math.abs(activeVideo.currentTime - time) > 3) {
         activeVideo.currentTime = time;
       }
     }
 
-    initPlayer();
-  </script>
-
-  <!-- GoatCounter manual trigger -->
-  <script>
-    fetch("https://mstv.goatcounter.com/count?p=" + encodeURIComponent(location.pathname))
-      .then(() => console.log("GoatCounter manual ping sent"))
-      .catch((e) => console.warn("GoatCounter failed", e));
+    // Initialize application
+    loadData();
   </script>
 </body>
 </html>
