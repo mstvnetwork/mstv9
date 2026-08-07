@@ -3,273 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MSTV Network - Media Player</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            width: 100%; height: 100vh;
-            background-color: #0f0f0f; color: #ffffff;
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden; display: flex; flex-direction: column;
-        }
-        header {
-            padding: 15px 20px;
-            background: linear-gradient(135deg, #111111, #1f1f1f);
-            border-bottom: 2px solid #FFD700;
-            display: flex; justify-content: center;
-        }
-        .logo-area { font-size: 1.6rem; font-weight: 800; color: #FFD700; }
-        
-        .video-stage-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            background-color: #000; position: relative;
-        }
-        .video-wrapper { width: 100%; max-width: 1000px; aspect-ratio: 16/9; background-color: black; }
-        #videoContainer { width: 100%; height: 100%; position: relative; }
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="MSTV Network offers a variety of live TV channels including music, movies, and more. Watch your favorite channels online for free.">
+    <meta name="robots" content="index, follow">
+  <title>m3u8 player</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
-        /* EPG Scrolling Text Banner below container */
-        .epg-ticker-container {
-            background-color: #1a1a1a;
-            color: #FFD700;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            border-top: 1px solid #282828;
-            border-bottom: 1px solid #282828;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        .epg-ticker-text {
-            display: inline-block;
-            padding-left: 100%;
-            animation: tickerScroll 25s linear infinite;
-        }
-        @keyframes tickerScroll {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-        
-        /* Category Section */
-        .categories-nav-wrapper { background-color: #141414; padding: 15px; border-top: 1px solid #282828; }
-        .category-buttons-container { display: flex; justify-content: center; gap: 20px; }
-        .cat-btn {
-            background: #262626; color: #fff; border: 1px solid #3d3d3d;
-            padding: 10px 25px; border-radius: 6px; font-weight: 600; cursor: pointer;
-        }
-        .cat-btn:hover { background: #FFD700; color: #000; }
-
-        .collapsible-drawer { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
-        .collapsible-drawer.open { max-height: 140px; border: 1px solid #333; margin-top: 10px; }
-        .channels-scroll-row { display: flex; gap: 12px; padding: 12px; overflow-x: auto; }
-
-        footer {
-            background-color: #050505; color: #666;
-            padding: 10px; text-align: center; font-size: 0.7rem;
-            border-top: 1px solid #111;
-        }
-    </style>
+  <style>
+    body {
+      background-color: #1a1a1a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 20px 10px;
+      background-color: #000;
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #FFD700;
+    }
+    .scrolling-text {
+      overflow: hidden;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    .top-scrolling-text { background-color: #222; }
+    .bottom-scrolling-text { background-color: #004080; }
+    .scrolling-text p {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 15s linear infinite;
+      font-size: 1.2em;
+      color: #fff;
+    }
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    .video-wrapper {
+      position: relative;
+      width: 90%;
+      max-width: 1280px;
+      margin: 30px auto;
+      padding-top: 56.25%;
+      background-color: black;
+    }
+    #videoContainer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    #muteToggle {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: white; font-size: 1.5em;
+      padding: 5px 10px; border-radius: 50%;
+      cursor: pointer; z-index: 10;
+    }
+    #liveStamp {
+      position: absolute;
+      top: 10px; left: 10px;
+      background-color: red; color: white;
+      font-weight: bold; padding: 5px 10px;
+      font-size: 0.9em; border-radius: 5px; z-index: 10;
+    }
+    footer {
+      background-color: black; color: yellow;
+      padding: 20px 10px; text-align: center; font-size: 0.9em;
+      margin-top: 40px;
+    }
+  </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo-area">MSTV NETWORK</div>
-  </header>
+  <header>MSTV NETWORK</header>
 
-  <div class="video-stage-container">
-    <div class="video-wrapper">
-      <div id="videoContainer">
-        <video id="videoElement" autoplay playsinline controls style="width:100%; height:100%; display:none; object-fit:contain;"></video>
-        <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allowfullscreen></iframe>
-      </div>
-    </div>
+  <div class="scrolling-text top-scrolling-text">
+    <p>Welcome to MSTV Network — Streaming Live 24/7 — Stay Tuned for Exclusive Content and Updates!</p>
   </div>
 
-  <!-- EPG Scrolling Text Banner below media container -->
-  <div class="epg-ticker-container">
-    <div class="epg-ticker-text" id="epgTickerText">Loading EPG Schedule...</div>
+  <div class="video-wrapper">
+    <div id="videoContainer">
+      <!-- Permanent elements for engine toggling -->
+      <video id="videoElement" autoplay playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none; user-select:none; display:none;"></video>
+      <iframe id="iframeElement" style="width:100%; height:100%; border:none; display:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+    </div>
+    <span id="muteToggle">🔈</span>
+    <div id="liveStamp">LIVE</div>
   </div>
     
-  <div class="categories-nav-wrapper">
-    <div class="category-buttons-container">
-      <button class="cat-btn" id="apnaDirectBtn"><i class="fa-solid fa-tv"></i> Apna Tv</button>
-      <button class="cat-btn" id="youtubeDirectBtn"><i class="fa-brands fa-youtube"></i> You Tube</button>
-      <button class="cat-btn" id="liveTvToggle"><i class="fa-solid fa-signal"></i> Live Tv</button>
-    </div>
-
-    <div id="liveTvDrawer" class="collapsible-drawer">
-      <div class="channels-scroll-row" id="liveTvChannelsList"></div>
-    </div>
+  <div class="scrolling-text bottom-scrolling-text">
+    <p>Loading schedule...</p>
   </div>
 
   <footer>
-    &copy; MSTV Network. All rights reserved. | Disclaimer: Educational use only.
+    <div class="copyright">© 2025 MSTV INDIA. All rights reserved.</div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+  <!-- HLS.js -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    let rawAppData = {};
-    let manualOverrideActive = false;
+    const container = document.getElementById('videoContainer');
+    const muteToggle = document.getElementById('muteToggle');
+    const bottomScrollText = document.querySelector('.bottom-scrolling-text p');
+
+    // Engine UI Nodes
+    const $videoEl = document.getElementById('videoElement');
+    const $iframeEl = document.getElementById('iframeElement');
+    const SANDBOX_VALUE = "allow-scripts allow-same-origin allow-presentation allow-forms";
+
+    let playlist = [];
+    let titles = [];
+    let videoDurations = [];
+    let streamTypes = [];
+    let totalDuration = 0;
+    
     let hls = null;
+    let currentIndex = -1;
+    let isMuted = true;
+    let currentUrl = '';
+    let currentType = '';
+    let currentTimeOffset = 0;
 
-    const videoElement = document.getElementById('videoElement');
-    const iframeElement = document.getElementById('iframeElement');
-    const epgTickerText = document.getElementById('epgTickerText');
+    muteToggle.textContent = '🔈';
+    muteToggle.addEventListener('click', () => {
+      isMuted = !isMuted;
+      muteToggle.textContent = isMuted ? '🔈' : '🔊';
+      
+      // Handle native video / HLS stream
+      $videoEl.muted = isMuted;
+      if (!$videoEl.paused) $videoEl.play().catch(() => {});
 
-    // Safe media loader matching core engine architecture
-    function loadMedia(url, type, channelObj = null) {
-      collapseAllDrawers();
-
-      if (!url) {
-        console.warn("Attempted to load empty media URL");
-        return;
-      }
-
-      // Check if YouTube link needs formatting into embed format if raw watch URL is given
-      let targetUrl = url;
-      if (type === 'iframe' || url.includes('youtube.com') || url.includes('youtu.be')) {
-        type = 'iframe';
-        if (url.includes('watch?v=')) {
-          targetUrl = url.replace('watch?v=', 'embed/');
-        } else if (url.includes('youtu.be/')) {
-          targetUrl = url.replace('youtu.be/', 'www.youtube.com/embed/');
+      // Handle iframe player (Instant YouTube postMessage unmuting)
+      if (currentType === 'iframe' && currentUrl) {
+        if (currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('youtube-nocookie.com')) {
+          const command = isMuted ? '{"event":"command","func":"mute","args":""}' : '{"event":"command","func":"unMute","args":""}';
+          $iframeEl.contentWindow.postMessage(command, '*');
+        } else {
+          loadMedia(currentUrl, currentType, currentTimeOffset);
         }
       }
+    });
+
+    async function fetchSchedule(isInitial = false) {
+      try {
+        const response = await fetch(`test.json?t=${Date.now()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        if (!data.playlist || data.playlist.length === 0) throw new Error('Playlist is empty');
+        
+        playlist = data.playlist.map(item => item.stream_url);
+        titles = data.playlist.map(item => item.title);
+        videoDurations = data.playlist.map(item => item.duration_seconds);
+        streamTypes = data.playlist.map(item => item.type || 'video');
+        totalDuration = videoDurations.reduce((a, b) => a + b, 0);
+
+        if (isInitial) {
+          syncPlayback();
+          setInterval(syncPlayback, 1000);
+        }
+      } catch (error) {
+        console.error('Failed to fetch test.json:', error);
+      }
+    }
+
+    function getPlaybackPosition() {
+      if (totalDuration === 0) return { index: 0, time: 0 };
+      const now = Math.floor(Date.now() / 1000) % totalDuration;
+      let offset = 0;
+      for (let i = 0; i < videoDurations.length; i++) {
+        if (now < offset + videoDurations[i]) {
+          return { index: i, time: now - offset };
+        }
+        offset += videoDurations[i];
+      }
+      return { index: 0, time: 0 };
+    }
+
+    function isDashStream(type, url) {
+      return type === 'dash' || url.includes('.mpd');
+    }
+
+    async function playDASH(url, startTime) {
+      $videoEl.src = url;
+      $videoEl.currentTime = startTime;
+      $videoEl.play().catch(() => {});
+    }
+
+    async function playHLS(url, startTime) {
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+
+      if (url.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          hls = new Hls();
+          hls.loadSource(url);
+          hls.attachMedia($videoEl);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            $videoEl.currentTime = startTime;
+            $videoEl.play().catch(() => {});
+          });
+        } else if ($videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+          $videoEl.src = url;
+          $videoEl.addEventListener('loadedmetadata', () => {
+            $videoEl.currentTime = startTime;
+            $videoEl.play().catch(() => {});
+          }, { once: true });
+        }
+      } else {
+        $videoEl.src = url;
+        $videoEl.currentTime = startTime;
+        $videoEl.play().catch(() => {});
+      }
+    }
+
+    function showLoader(show) {
+      // Optional UI loader handler
+    }
+
+    function showError(message) {
+      console.error(message);
+    }
+
+    async function loadMedia(url, type, startTime, ch = {}) {
+      if (!url) return;
+      
+      currentUrl = url;
+      currentType = type;
+      currentTimeOffset = startTime;
+      $videoEl.muted = isMuted;
+
+      let streamUrl = url;
 
       if (type === 'iframe') {
-        if (hls) { hls.destroy(); hls = null; }
-        videoElement.pause();
-        videoElement.removeAttribute('src');
-        videoElement.load();
-        videoElement.style.display = 'none';
-        
-        iframeElement.style.display = 'block';
-        iframeElement.src = targetUrl;
-      } else {
-        iframeElement.style.display = 'none';
-        iframeElement.src = '';
-        videoElement.style.display = 'block';
-
-        if (targetUrl.includes('.m3u8')) {
-          if (Hls.isSupported()) {
-            if (hls) { hls.destroy(); }
-            hls = new Hls();
-            hls.loadSource(targetUrl);
-            hls.attachMedia(videoElement);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
-            });
-            hls.on(Hls.Events.ERROR, (event, data) => {
-              if (data.fatal) {
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    hls.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    hls.recoverMediaError();
-                    break;
-                  default:
-                    hls.destroy();
-                    break;
-                }
-              }
-            });
-          } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-            videoElement.src = targetUrl;
-            videoElement.addEventListener('loadedmetadata', () => {
-              videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
-            });
+        if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube-nocookie.com')) {
+          if (!streamUrl.includes('enablejsapi=1')) {
+            streamUrl += (streamUrl.includes('?') ? '&' : '?') + 'enablejsapi=1';
           }
-        } else {
-          if (hls) { hls.destroy(); hls = null; }
-          videoElement.src = targetUrl;
-          videoElement.play().catch(e => console.log("Autoplay restriction caught:", e));
+          const muteVal = isMuted ? '1' : '0';
+          if (streamUrl.includes('mute=')) {
+            streamUrl = streamUrl.replace(/mute=[01]/, `mute=${muteVal}`);
+          } else {
+            streamUrl += `&mute=${muteVal}`;
+          }
+          if (!streamUrl.includes('autoplay=')) {
+            streamUrl += '&autoplay=1';
+          }
         }
-      }
 
-      if (channelObj && (channelObj.epg || channelObj.description)) {
-        epgTickerText.textContent = channelObj.epg || channelObj.description;
+        // Engine Code Block for Iframe
+        $videoEl.style.display = 'none';
+        $iframeEl.style.display = 'block';
+        if (ch.sandboxed !== false) $iframeEl.setAttribute('sandbox', SANDBOX_VALUE);
+        else $iframeEl.removeAttribute('sandbox');
+        
+        $iframeEl.src = streamUrl;
+        $iframeEl.onload = () => showLoader(false);
+        $iframeEl.onerror = () => showError('iFrame error');
+
+      } else if (isDashStream(type, streamUrl)) {
+        // Engine Code Block for DASH
+        $iframeEl.style.display = 'none';
+        $iframeEl.style.display = ''; // Clear iframe src to stop background audio leak
+        $iframeEl.src = '';
+        $videoEl.style.display = 'block';
+        
+        await playDASH(streamUrl, startTime);
+      } else {
+        // Engine Code Block for HLS / Default
+        $iframeEl.style.display = 'none';
+        $iframeEl.src = ''; // Clear iframe src to stop background audio leak
+        $videoEl.style.display = 'block';
+        
+        await playHLS(streamUrl, startTime);
       }
+    }
+
+    function updateBottomScrollText(index) {
+      const nowPlaying = titles[index] || "Unknown";
+      const comingNext = titles[(index + 1) % titles.length] || "Unknown";
+      bottomScrollText.textContent = `Now Playing: ${nowPlaying} — Coming Next: ${comingNext}`;
     }
 
     function syncPlayback() {
-      if (!manualOverrideActive) {
-        const apnaSource = rawAppData.apnaTv || rawAppData.apnatv || rawAppData.channels;
-        if (Array.isArray(apnaSource) && apnaSource.length > 0) {
-          loadMedia(apnaSource[0].url, apnaSource[0].type || 'video', apnaSource[0]);
-        } else if (apnaSource && typeof apnaSource === 'object' && apnaSource.url) {
-          loadMedia(apnaSource.url, apnaSource.type || 'video', apnaSource);
-        }
+      if (totalDuration === 0) return;
+      const { index, time } = getPlaybackPosition();
+
+      if (index !== currentIndex) {
+        currentIndex = index;
+        loadMedia(playlist[index], streamTypes[index], time);
+        updateBottomScrollText(index);
+        return;
+      }
+
+      if ($videoEl.style.display === 'block' && Math.abs($videoEl.currentTime - time) > 3) {
+        $videoEl.currentTime = time;
       }
     }
 
-    async function fetchScheduleAndChannels() {
-      try {
-        const response = await fetch('test.json');
-        rawAppData = await response.json();
-
-        // Populate Live TV Drawer List dynamically
-        const liveTvChannelsList = document.getElementById('liveTvChannelsList');
-        liveTvChannelsList.innerHTML = '';
-        
-        const liveTvArray = rawAppData.liveTv || rawAppData.livetv || [];
-        if (Array.isArray(liveTvArray)) {
-          liveTvArray.forEach((ch, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'cat-btn';
-            btn.style.whiteSpace = 'nowrap';
-            btn.innerHTML = `<i class="fa-solid fa-play"></i> ${ch.name || 'Channel ' + (idx + 1)}`;
-            btn.onclick = () => {
-              manualOverrideActive = true;
-              loadMedia(ch.url, ch.type || 'video', ch);
-            };
-            liveTvChannelsList.appendChild(btn);
-          });
-        }
-
-        if (rawAppData.epgTicker || rawAppData.epg) {
-          epgTickerText.textContent = rawAppData.epgTicker || rawAppData.epg;
-        }
-
-        syncPlayback();
-      } catch (error) {
-        console.error("Error loading test.json feed:", error);
-        epgTickerText.textContent = "Error loading schedule data from test.json.";
-      }
+    async function initPlayer() {
+      await fetchSchedule(true);
+      setInterval(() => {
+        fetchSchedule(false);
+      }, 10000);
     }
 
-    // Category button direct action triggers
-    document.getElementById('apnaDirectBtn').addEventListener('click', () => {
-      collapseAllDrawers();
-      manualOverrideActive = false;
-      syncPlayback();
-    });
-
-    document.getElementById('youtubeDirectBtn').addEventListener('click', () => {
-      collapseAllDrawers();
-      manualOverrideActive = true;
-      const ytSource = rawAppData.youtube || rawAppData.youtubelive;
-      if (Array.isArray(ytSource) && ytSource.length > 0) {
-        loadMedia(ytSource[0].url, 'iframe', ytSource[0]);
-      } else if (ytSource && ytSource.url) {
-        loadMedia(ytSource.url, 'iframe', ytSource);
-      } else {
-        console.warn("No valid YouTube stream found in test.json.");
-      }
-    });
-
-    const liveTvBtn = document.getElementById('liveTvToggle');
-    const liveTvDrawer = document.getElementById('liveTvDrawer');
-    liveTvBtn.addEventListener('click', () => {
-      liveTvDrawer.classList.toggle('open');
-    });
-
-    function collapseAllDrawers() {
-      liveTvDrawer.classList.remove('open');
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchScheduleAndChannels();
-    });
+    initPlayer();
   </script>
 </body>
 </html>
