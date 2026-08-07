@@ -659,17 +659,120 @@
     });
 
     // Fetch JSON Data
-    async function loadData() {
-      try {
-        const response = await fetch('test.json');
-        const data = await response.json();
-        rawPlaylists = data.playlists || {};
-        liveTvData = data.live_tv || {};
-        renderLiveTvSubcategories();
-      } catch (error) {
-        console.error('Failed to load test.json:', error);
-        epgTickerText.textContent = 'Error loading timetable data.';
+function loadMedia(item, startTime = 0) {
+  showSpinner();
+  
+  cleanupPlayers();
+  
+  // 1. Properly set maxWatchedTime to initial start position
+  maxWatchedTime = startTime;
+  container.innerHTML = '';
+
+  if (item.type === 'iframe') {
+    const videoIdMatch = item.stream_url.match(/(?:embed\/|v=)([^&?]+)/);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+
+    if (videoId && window.YT && window.YT.Player) {
+      const playerDiv = document.createElement('div');
+      playerDiv.id = 'ytApiPlayer';
+      container.appendChild(playerDiv);
+
+      ytPlayer = new YT.Player('ytApiPlayer', {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          modestbranding: 1,
+          rel: 0,
+          enablejsapi: 1,
+          mute: isMuted ? 1 : 0
+        },
+        events: {
+          onReady: (event) => {
+            hideSpinner();
+            event.target.playVideo();
+            startSkipPreventionMonitor();
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              hideSpinner();
+            }
+          }
+        }
+      });
+    } else {
+      const iframe = document.createElement('iframe');
+      iframe.src = item.stream_url;
+      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+      iframe.onload = () => hideSpinner();
+      container.appendChild(iframe);
+    }
+
+  } else {
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = isMuted;
+    video.playsInline = true;
+    video.preload = 'auto';
+
+    // Flag to prevent skip enforcement while initial buffering/seeking happens
+    let isInitialLoading = true;
+
+    video.addEventListener('playing', () => {
+      hideSpinner();
+      // Enable skip-prevention only after video is actively playing smoothly
+      setTimeout(() => { isInitialLoading = false; }, 500);
+    });
+
+    container.appendChild(video);
+
+    // Skip prevention logic for HTML5 / HLS
+    video.addEventListener('timeupdate', () => {
+      // Ignore checks while initial loading, seeking, or if paused
+      if (isInitialLoading || video.seeking || video.paused) return;
+
+      if (video.currentTime > maxWatchedTime + 2) {
+        video.currentTime = maxWatchedTime;
+      } else {
+        maxWatchedTime = Math.max(maxWatchedTime, video.currentTime);
       }
+    });
+
+    if (item.stream_url.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        hls = new Hls({ 
+          enableWorker: true, 
+          lowLatencyMode: false,          // Turn off low latency to prevent frame drops on cold start
+          capLevelToPlayerSize: true,     // Match stream quality to container size
+          startLevel: -1,                  // Automatic adaptive bitrate start
+          maxBufferLength: 30,
+          backBufferLength: 15
+        });
+
+        hls.loadSource(item.stream_url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (startTime > 0) {
+            video.currentTime = startTime;
+          }
+          video.play().catch(() => {});
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = item.stream_url;
+        video.addEventListener('loadedmetadata', () => {
+          if (startTime > 0) video.currentTime = startTime;
+          video.play().catch(() => {});
+        }, { once: true });
+      }
+    } else {
+      video.src = item.stream_url;
+      if (startTime > 0) video.currentTime = startTime;
+      video.play().catch(() => {});
+    }
+  }
     }
 
     // Toggle Live TV Collapsible Subcategories Menu
